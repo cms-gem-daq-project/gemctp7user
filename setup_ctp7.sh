@@ -120,19 +120,19 @@ then
     ssh root@${ctp7host} mkdir -p /mnt/persistent/gemdaq
 
     echo "Fetching binaries and libraries"
-    echo "wget https://github.com/mexanick/xhal/releases/download/v2.0.0/ipbus -O bin/ipbus"
-    wget https://github.com/mexanick/xhal/releases/download/v2.0.0/ipbus -O bin/ipbus
+    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/ipbus -O bin/ipbus"
+    wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/ipbus -O bin/ipbus
 
-    echo "wget https://github.com/mexanick/xhal/releases/download/v2.0.0/liblog4cplus.so  -O lib/liblog4cplus.so"
-    wget https://github.com/mexanick/xhal/releases/download/v2.0.0/liblog4cplus.so  -O lib/liblog4cplus.so
-    echo "wget https://github.com/mexanick/xhal/releases/download/v2.0.0/libxhal_ctp7.so  -O lib/libxhal_ctp7.so"
-    wget https://github.com/mexanick/xhal/releases/download/v2.0.0/libxhal_ctp7.so  -O lib/libxhal_ctp7.so
-    echo "wget https://github.com/mexanick/xhal/releases/download/v2.0.0/libxerces-c.so   -O lib/libxerces-c.so"
-    wget https://github.com/mexanick/xhal/releases/download/v2.0.0/libxerces-c.so   -O lib/libxerces-c.so
-    echo "wget https://github.com/mexanick/xhal/releases/download/v2.0.0/librwreg_ctp7.so -O lib/librwreg_ctp7.so"
-    wget https://github.com/mexanick/xhal/releases/download/v2.0.0/librwreg_ctp7.so -O lib/librwreg_ctp7.so
-    echo "wget https://github.com/mexanick/xhal/releases/download/v2.0.0/liblmdb.so       -O lib/liblmdb.so"
-    wget https://github.com/mexanick/xhal/releases/download/v2.0.0/liblmdb.so       -O lib/liblmdb.so
+    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/liblog4cplus.so  -O lib/liblog4cplus.so"
+    wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/liblog4cplus.so  -O lib/liblog4cplus.so
+    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/libxhal_ctp7.so  -O lib/libxhal_ctp7.so"
+    wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/libxhal_ctp7.so  -O lib/libxhal_ctp7.so
+    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/libxerces-c.so   -O lib/libxerces-c.so"
+    wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/libxerces-c.so   -O lib/libxerces-c.so
+    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/librwreg_ctp7.so -O lib/librwreg_ctp7.so"
+    wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/librwreg_ctp7.so -O lib/librwreg_ctp7.so
+    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/liblmdb.so       -O lib/liblmdb.so"
+    wget https://github.com/cms-gem-daq-project/xhal/releases/download/v2.0.0/liblmdb.so       -O lib/liblmdb.so
 
     echo "ln -sf librwreg_ctp7.so lib/librwreg.so"
     ln -sf librwreg_ctp7.so lib/librwreg.so
@@ -141,8 +141,8 @@ then
     echo "ln -sf liblog4cplus.so lib/libxerces-c-3.1.so"
     ln -sf liblog4cplus.so lib/liblog4cplus-1.1.so.9
 
-    echo "wget https://github.com/mexanick/xhal/files/1071017/reg_interface.zip && unzip reg_interface.zip && rm reg_interface.zip"
-    wget https://github.com/mexanick/xhal/files/1071017/reg_interface.zip
+    echo "wget https://github.com/cms-gem-daq-project/xhal/files/1071017/reg_interface.zip && unzip reg_interface.zip && rm reg_interface.zip"
+    wget https://github.com/cms-gem-daq-project/xhal/files/1071017/reg_interface.zip
     unzip reg_interface.zip -d python/
     rm reg_interface.zip
 
