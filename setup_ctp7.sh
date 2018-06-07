@@ -116,6 +116,13 @@ fi
 
 if [ -n "${ctp7fw}" ]
 then
+
+    if [[ ${ctp7fw} = *"3."* ]]
+    then
+        ln -sf recover_v3.sh scripts/recover.sh
+    else 
+        ln -sf recover_v2.sh scripts/recover.sh
+    fi
     # echo "creating links for CTP7 firmware version: ${ctpfw}"
     if [ ! -f "fw/gem_ctp7_gem_ctp7_v${ctp7fw//./_}.bit" ]
     then
@@ -141,6 +148,12 @@ then
         echo "rm -rf address_table_v_${ctp7fw//./_}"
         rm -rf address_table_v_${ctp7fw//./_}
     fi
+
+    echo "Download gemloader"
+    echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip"
+    wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip
+    unzip gemloader_v${ctp7fw//./_}.zip
+    rm -rf gemloader_v${ctp7fw//./_}.zip
 
     echo "ln -sf xml/gem_amc_top_v${ctp7fw//./_}.xml xml/gem_amc_top.xml"
     ln -sf gem_amc_v${ctp7fw//./_}.xml xml/gem_amc_top.xml
@@ -184,12 +197,10 @@ then
         echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/libxerces-c.so   -O lib/libxerces-c.so"
         wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/libxerces-c.so   -O lib/libxerces-c.so
         echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/librwreg_ctp7.so -O lib/librwreg_ctp7.so"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/librwreg_ctp7.so -O lib/librwreg_ctp7.so
+        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/librwreg.so -O lib/librwreg.so
         echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/liblmdb.so       -O lib/liblmdb.so"
         wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/liblmdb.so       -O lib/liblmdb.so
 
-        echo "ln -sf librwreg_ctp7.so lib/librwreg.so"
-        ln -sf librwreg_ctp7.so lib/librwreg.so
         echo "ln -sf libxhal_ctp7.so lib/libxhal.so"
         ln -sf libxhal_ctp7.so lib/libxhal.so
         echo "ln -sf libxerces-c.so lib/libxerces-c-3.1.so"
@@ -225,7 +236,7 @@ then
     find lib -type f -print0 | xargs -0 -n1 chmod a+rx
 
     echo "rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python root@${ctp7host}:/mnt/persistent/gemdaq/"
-    rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python root@${ctp7host}:/mnt/persistent/gemdaq/
+    rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python gemloader root@${ctp7host}:/mnt/persistent/gemdaq/
    
     echo "Update LMDB address table on the CTP7, make a new .pickle file and resync xml folder"
     echo "cp xml/* $XHAL_ROOT/etc/"
@@ -249,6 +260,7 @@ then
     rm ./lib/*
     rm ./fw/*
     rm ./oh_fw/*
-    rm ./python/reg_interface/*
+    rm -rf ./python/reg_interface
     rm ./xml/*
+    rm -rf ./gemloader
 fi
