@@ -153,6 +153,7 @@ then
     #wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip
     #unzip gemloader_v${ctp7fw//./_}.zip
     #rm -rf gemloader_v${ctp7fw//./_}.zip
+    # Temporary hack, above should hopefully be used once GEM_AMC releasing conforms
     echo "wget https://github.com/evka85/GEM_AMC/releases/download/v3.5.0/gemloader_v3_5_0.zip"
     wget https://github.com/evka85/GEM_AMC/releases/download/v3.5.0/gemloader_v3_5_0.zip
     unzip gemloader_v3_5_0.zip
