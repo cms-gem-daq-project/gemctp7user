@@ -70,24 +70,23 @@ then
     if [[ ${ohfw} = *"3."* ]]
     then 
         echo "Downloading V3 firmware with tag ${ohfw}"
-        echo "wget https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download/${ohfw}/OH_20180320_${ohfw}.tar.gz"
-        wget https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download/${ohfw}/OH_20180320_${ohfw}.tar.gz 
+        echo "wget https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download/${ohfw}/OH_${ohfw}.tar.gz"
+        wget https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download/${ohfw}/OH_${ohfw}.tar.gz 
         echo "Untar and copy firmware files and xml address table to relevant locations"
-        ohfw="20180320_"${ohfw}
         echo "tar -xvf OH_${ohfw}.tar.gz"
         tar -xvf OH_${ohfw}.tar.gz
         echo "cp OH_${ohfw}/OH_${ohfw}.mcs oh_fw/optohybrid_${ohfw}.mcs"
-        cp OH_${ohfw}/OH-${ohfw//_/-}.mcs oh_fw/optohybrid_${ohfw}.mcs
-        echo "cp OH_${ohfw}/OH-${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit"
-        cp OH_${ohfw}/OH-${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit
-        echo "cp OH_${ohfw}/optohybrid_registers.xml xml/optohybrid_registers_${ohfw}.xml"
-        cp OH_${ohfw}/optohybrid_registers.xml xml/optohybrid_registers_${ohfw}.xml
+        cp OH_${ohfw}/OH_${ohfw//_/-}.mcs oh_fw/optohybrid_${ohfw}.mcs
+        echo "cp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit"
+        cp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit
+        echo "cp OH_${ohfw}/oh_registers.xml xml/optohybrid_registers_${ohfw}.xml"
+        cp OH_${ohfw}/oh_registers_${ohfw}.xml xml/oh_registers_${ohfw}.xml
         echo "ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit"
         ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit
         echo "ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs"
         ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs
-        echo "ln -sf xml/optohybrid_registers_${ohfw}.mcs oh_fw/optohybrid_registers.xml"
-        ln -sf optohybrid_registers_${ohfw}.xml xml/optohybrid_registers.xml
+        echo "ln -sf xml/oh_registers_${ohfw}.mcs oh_fw/optohybrid_registers.xml"
+        ln -sf oh_registers_${ohfw}.xml xml/optohybrid_registers.xml
         echo "rm -rf OH_${ohfw}/"
         rm -rf OH_${ohfw}/
         echo "rm -rf OH_${ohfw}.tar.gz"
@@ -143,17 +142,22 @@ then
         unzip address_table_v${ctp7fw//./_}_${nlinks}oh.zip
         echo "rm address_table_v${ctp7fw//./_}_${nlinks}oh.zip"
         rm address_table_v${ctp7fw//./_}_${nlinks}oh.zip
-        echo "cp address_table_v_${ctp7fw//./_}/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml"
-        cp address_table_v_${ctp7fw//./_}/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml
-        echo "rm -rf address_table_v_${ctp7fw//./_}"
-        rm -rf address_table_v_${ctp7fw//./_}
+        echo "cp address_table_v${ctp7fw//./_}_${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml"
+        cp address_table_v${ctp7fw//./_}_${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml
+        echo "rm -rf address_table_v${ctp7fw//./_}_${nlinks}oh"
+        rm -rf address_table_v${ctp7fw//./_}_${nlinks}oh
     fi
 
     echo "Download gemloader"
-    echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip"
-    wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip
-    unzip gemloader_v${ctp7fw//./_}.zip
-    rm -rf gemloader_v${ctp7fw//./_}.zip
+    #echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip"
+    #wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip
+    #unzip gemloader_v${ctp7fw//./_}.zip
+    #rm -rf gemloader_v${ctp7fw//./_}.zip
+    # Temporary hack, above should hopefully be used once GEM_AMC releasing conforms
+    echo "wget https://github.com/evka85/GEM_AMC/releases/download/v3.5.0/gemloader_v3_5_0.zip"
+    wget https://github.com/evka85/GEM_AMC/releases/download/v3.5.0/gemloader_v3_5_0.zip
+    unzip gemloader_v3_5_0.zip
+    rm -rf gemloader_v3_5_0.zip
 
     echo "ln -sf xml/gem_amc_top_v${ctp7fw//./_}.xml xml/gem_amc_top.xml"
     ln -sf gem_amc_v${ctp7fw//./_}.xml xml/gem_amc_top.xml
@@ -168,7 +172,7 @@ then
         case $create in
             [yY]* )
                 echo "ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser}";
-                ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser} && save_passwd;
+                ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser} && /bin/save_passwd;
                 echo "rsync -aXch --progress --partial --links .profile .bashrc .viminfo .vimrc .inputrc ${newuser}@${ctp7host}:~/";
                 rsync -aXch --progress --partial --links .profile .bashrc .viminfo .vimrc .inputrc ${newuser}@${ctp7host}:~/;
                 break;;
@@ -235,8 +239,14 @@ then
     find bin -type f -print0 | xargs -0 -n1 chmod a+rx
     find lib -type f -print0 | xargs -0 -n1 chmod a+rx
 
-    echo "rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python root@${ctp7host}:/mnt/persistent/gemdaq/"
-    rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python gemloader root@${ctp7host}:/mnt/persistent/gemdaq/
+    echo "wget https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/develop/conf/conf.txt"
+    wget https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/develop/conf/conf.txt
+    echo "cp conf.txt vfat3/conf.txt"
+    cp conf.txt vfat3/conf.txt
+    echo "rm -rf conf.txt"
+
+    echo "rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python vfat3 root@${ctp7host}:/mnt/persistent/gemdaq/"
+    rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python gemloader vfat3 root@${ctp7host}:/mnt/persistent/gemdaq/
    
     echo "Update LMDB address table on the CTP7, make a new .pickle file and resync xml folder"
     echo "cp xml/* $XHAL_ROOT/etc/"
@@ -257,6 +267,7 @@ then
 
     echo "Cleaning local temp folders"
     rm ./bin/*
+    rm ./vfat3/*
     rm ./lib/*
     rm ./fw/*
     rm ./oh_fw/*
