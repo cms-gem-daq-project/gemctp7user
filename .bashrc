@@ -23,6 +23,7 @@ alias l='ls $LS_OPTIONS -lA'
 #export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
+export PYTHONPATH=/mnt/persistent/gemdaq/python/reg_interface:$PYTHONPATH
 
 [ -z "$PS1" ] && return
 
