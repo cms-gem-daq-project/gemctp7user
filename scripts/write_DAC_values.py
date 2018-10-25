@@ -47,11 +47,8 @@ for line in open(args.nominalDacFileList):
 print nominal_DAC_value_files
     
 for reg in nominal_DAC_value_files.keys():
-    print "setting register "+str(reg)
-    print nominal_DAC_value_files[reg]
+    print "setting the register "+str(reg)+ " using the file:"+nominal_DAC_value_files[reg]
     fname=nominal_DAC_value_files[reg]
-    print fname.split('/')[len(fname.split('/'))-1]
-    
     f = open(nominal_DAC_value_files[reg])
     for line in f:
         vfat=int(line.split('\t')[0])
