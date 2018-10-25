@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Arguments to supply to write_DAC_values.py')
 
 parser.add_argument('OH', type=str, help="OH number", metavar='OH')
-parser.add_argument('nominalDacFileList', type=str, help="Name of a file containing a list of register names and NominalDACValues.txt files. Format:register_name1 <space> /path/to/nominal/DAC/file1 <newline> register_name2 <space> /path/to/nominal/DAC/file2 <newline> ... "), metavar='nominalDacFileList')
+parser.add_argument('nominalDacFileList', type=str, help="Name of a file containing a list of register names and NominalDACValues.txt files. Format:register_name1 <space> /path/to/nominal/DAC/file1 <newline> register_name2 <space> /path/to/nominal/DAC/file2 <newline> ... ", metavar='nominalDacFileList')
 parser.add_argument('--dry_run', dest='dry_run', action='store_true', help="If this flag is set the script will not overwrite the vfat3 config files.")
 
 args = parser.parse_args()
