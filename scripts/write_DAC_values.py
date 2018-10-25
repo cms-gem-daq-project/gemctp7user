@@ -68,6 +68,6 @@ for reg in nominal_DAC_value_files.keys():
                 print str(vfat)+ ": "+str(value)
             
             if args.dry_run:
-                os.system("sed -i '/^"+reg+"/{s/ [0-9]\+/ "+str(value)+"/;}' /mnt/persistent/gemdaq/vfat3/config_OH"+str(args.OH)+"_VFAT"+str(vfat)+".txt")
+                os.system("sed '/^"+reg+"/{s/ [0-9]\+/ "+str(value)+"/;}' /mnt/persistent/gemdaq/vfat3/config_OH"+str(args.OH)+"_VFAT"+str(vfat)+".txt")
             else:  
-                os.system("sed '/^"+reg+"/{s/ [0-9]\+/ "+str(value)+"/;}' /mnt/persistent/gemdaq/vfat3/config_OH"+str(args.OH)+"_VFAT"+str(vfat)+".txt")    
+                os.system("sed -i '/^"+reg+"/{s/ [0-9]\+/ "+str(value)+"/;}' /mnt/persistent/gemdaq/vfat3/config_OH"+str(args.OH)+"_VFAT"+str(vfat)+".txt")  
