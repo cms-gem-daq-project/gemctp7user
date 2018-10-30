@@ -12,9 +12,6 @@ usage() {
 	echo ''
 	echo '		./replace_parameter.sh PULSE_STRETCH 4 1'
 	echo '		./replace_parameter.sh -f PULSE_STRETCH 4 /path/to/NominalDacValues.txt'
-	echo ''    
-
-	kill -INT $$; 
 }
 
 ISFILE=0;
@@ -25,11 +22,14 @@ do
         f)
             ISFILE=1;;
         h)
-            usage;;
+            usage
+            exit;;
         \?)
-            usage;;
+            usage
+            exit;;
         [?])
-            usage;;
+            usage
+            exit;;
     esac
 done
 unset OPTIND
@@ -38,6 +38,8 @@ if (($ISFILE == 1)); then
     if [ -z ${4+x} ]
     then
 	    usage
+        echo "The -f flag was used, so the third argument should be a filename."
+        exit
     fi
     REGISTER=$2
     LINK=$3
@@ -47,6 +49,8 @@ else
     if [ -z ${3+x} ]
     then
 	    usage
+        echo "The -f flag was not used, so the third argument should be a value."
+        exit
     fi
     REGISTER=$1
     LINK=$2
