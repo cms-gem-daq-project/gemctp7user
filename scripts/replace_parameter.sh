@@ -15,6 +15,7 @@ usage() {
 	echo ''
 	echo '		./replace_parameter.sh PULSE_STRETCH 1 4'
 	echo '		./replace_parameter.sh -f /path/to/NominalDacValues.txt PULSE_STRETCH 1'
+    kill -INT $$
 }
 
 ISFILE=0;
@@ -25,14 +26,11 @@ do
         f)
             FILENAME=$OPTARG;;
         h)
-            usage
-            exit;;
+            usage;;
         \?)
-            usage
-            exit;;
+            usage;;
         [?])
-            usage
-            exit;;
+            usage;;
     esac
 done
 shift $((OPTIND-1))
@@ -46,7 +44,6 @@ if [ -z ${LINK} ]
 then
     echo 'No link supplied'
     usage
-    exit
 fi
 
 if [ -z ${FILENAME} ]
@@ -55,7 +52,6 @@ then
     then
         echo 'No value supplied'
         usage
-        exit
     else
         sed -i "s|^${REGISTER}.*|${REGISTER}   ${VALUE}|g" /mnt/persistent/gemdaq/vfat3/config_OH${LINK}_VFAT*_cal.txt
     fi
