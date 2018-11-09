@@ -2,7 +2,7 @@
 
 usage() {
 
-    echo './replace_parameter.sh <REGISTER> <VALUE> <LINK>'
+    echo './replace_parameter.sh <REGISTER> <LINK> <VALUE>'
 	echo './replace_parameter.sh -f <FILENAME> <REGISTER> <LINK>'
 	echo ''
 	echo '	REGISTER - register to be updated dropping the "CFG_" substring'
@@ -13,7 +13,7 @@ usage() {
 	echo ''
 	echo '	Examples:'
 	echo ''
-	echo '		./replace_parameter.sh PULSE_STRETCH 4 1'
+	echo '		./replace_parameter.sh PULSE_STRETCH 1 4'
 	echo '		./replace_parameter.sh -f /path/to/NominalDacValues.txt PULSE_STRETCH 1'
 }
 
@@ -46,8 +46,8 @@ if [ -z ${FILENAME} ]; then
         exit
     fi
     REGISTER=$1
-    VALUE=$2
-    LINK=$3
+    VALUE=$3
+    LINK=$2
     sed -i "s|^${REGISTER}.*|${REGISTER}   ${VALUE}|g" /mnt/persistent/gemdaq/vfat3/config_OH${LINK}_VFAT*_cal.txt
 else
     if [ -z ${4+x} ]
