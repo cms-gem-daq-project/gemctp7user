@@ -35,29 +35,35 @@ do
             exit;;
     esac
 done
+shift $((OPTIND-1))
 unset OPTIND
 
-if [ -z ${FILENAME} ]; then
-    if [ -z ${3+x} ]
+REGISTER=$1
+LINK=$2
+VALUE=$3
+
+if [ -z ${LINK} ]
+then
+    echo 'No link supplied'
+    usage
+    exit
+fi
+
+if [ -z ${FILENAME} ]
+then
+    if [ -z ${VALUE} ]
     then
-	    usage
-        echo ""
-        echo "        The -f flag was not provided, so the first usage example above should be followed."
+        echo 'No value supplied'
+        usage
         exit
+    else
+        sed -i "s|^${REGISTER}.*|${REGISTER}   ${VALUE}|g" /mnt/persistent/gemdaq/vfat3/config_OH${LINK}_VFAT*_cal.txt
     fi
-    REGISTER=$1
-    VALUE=$3
-    LINK=$2
-    sed -i "s|^${REGISTER}.*|${REGISTER}   ${VALUE}|g" /mnt/persistent/gemdaq/vfat3/config_OH${LINK}_VFAT*_cal.txt
 else
-    if [ -z ${4+x} ]
+    if [ -f ${FILENAME} ]
     then
-	    usage
-        echo ""
-        echo "        The -f flag was provided, so the second usage example above should be followed."
-        exit
+        awk '{system("sed -i \"s|^'$REGISTER'.*|'$REGISTER'   "$2"|g\" /mnt/persistent/gemdaq/vfat3/config_OH'$LINK'_VFAT"$1"_cal.txt")}' $FILENAME
+    else
+        echo "File ${FILENAME} not found"
     fi
-    REGISTER=$2
-    LINK=$3
-    awk '{system("sed -i \"s|^'$REGISTER'.*|'$REGISTER'   "$2"|g\" /mnt/persistent/gemdaq/vfat3/config_OH'$LINK'_VFAT"$1"_cal.txt")}' $FILENAME
 fi
