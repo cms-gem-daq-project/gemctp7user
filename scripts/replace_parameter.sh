@@ -2,19 +2,18 @@
 
 usage() {
 
-    echo './replace_parameter.sh <REGISTER> <LINK> <VALUE>'
-	echo './replace_parameter.sh -f <FILENAME> <REGISTER> <LINK>'
-	echo ''
-	echo '	REGISTER - register to be updated dropping the "CFG_" substring'
-	echo ''
-	echo '	VALUE - value in decimal to be assigned to REGISTER'
+    echo './replace_parameter.sh [-f <FILENAME>] <REGISTER> <LINK> <VALUE>'
+    echo ''
+    echo '	REGISTER - register to be updated dropping the "CFG_" substring'
+    echo ''
+    echo '	VALUE - value in decimal to be assigned to REGISTER'
     echo ''
     echo '	FILENAME - name of a file containing a list of vfat number/value pairs'
-	echo ''
-	echo '	Examples:'
-	echo ''
-	echo '		./replace_parameter.sh PULSE_STRETCH 1 4'
-	echo '		./replace_parameter.sh -f /path/to/NominalDacValues.txt PULSE_STRETCH 1'
+    echo ''
+    echo '	Examples:'
+    echo ''
+    echo '		./replace_parameter.sh PULSE_STRETCH 1 4'
+    echo '		./replace_parameter.sh -f /path/to/NominalDacValues.txt PULSE_STRETCH 1'
     kill -INT $$
 }
 
