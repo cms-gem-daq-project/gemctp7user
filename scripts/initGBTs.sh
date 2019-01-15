@@ -17,10 +17,10 @@ usage() {
     echo ''
 
     kill -INT $$;
-} 
+}
 
 # Check inputs
-if [ -z ${4+x} ] 
+if [ -z ${4+x} ]
 then
     usage
 fi
