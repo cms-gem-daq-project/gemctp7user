@@ -31,7 +31,7 @@ do
 	then
 
 		printf "Applying special inverted RX channel config for GTH CH#$i...\n"
-		mpoke $((gth_ctrl_ch0_base_addr+256*11)) $data_ch_inverted
+		mpoke $gth_ctrl_addr $data_ch_inverted
 	else
 		#printf "Normal config for $i\n"
 		#Apply standard, regular channel config
