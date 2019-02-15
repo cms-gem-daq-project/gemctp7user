@@ -4,6 +4,7 @@ helpstring="Usage: $0 [options] <CTP7 hostname>
   Options:
     -o OptoHybrid fw version
     -c CTP7 fw version
+    -g GE generation (1 for Ge1/1, 2 for GE2/1, optional. Defaults to GE1/1)
     -l Number of OH links supported in the CTP7 fw
     -x XHAL release version
     -a CTP7 user account to create
@@ -24,11 +25,13 @@ then
     exit
 fi
 
-while getopts "a:c:l:o:x:uh" opts
+while getopts "a:c:g:l:o:x:uh" opts
 do
     case $opts in
         c)
             ctp7fw="$OPTARG";;
+        g)
+            ge_gen="$OPTARG";;
         l) 
             nlinks="$OPTARG";;
         o)
@@ -112,6 +115,15 @@ then
         ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs
     fi
 fi
+if [ -n "${ge_gen}" ]
+then
+    if [[ ${ge_gen} = "2" ]]
+    then
+        ge21suf="ge21_"
+    else 
+        ge21suf=""
+    fi
+fi
 
 if [ -n "${ctp7fw}" ]
 then
@@ -123,29 +135,29 @@ then
         ln -sf recover_v2.sh scripts/recover.sh
     fi
     # echo "creating links for CTP7 firmware version: ${ctpfw}"
+
     if [ ! -f "fw/gem_ctp7_gem_ctp7_v${ctp7fw//./_}.bit" ]
     then
         echo "CTP7 firmware fw/gem_ctp7_v${ctp7fw//./_}.bit missing, downloading"
-        echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gem_ctp7_v${ctp7fw//./_}_${nlinks}oh.bit -O fw/gem_ctp7_v${ctp7fw//./_}_${nlinks}oh.bit"
-        wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gem_ctp7_v${ctp7fw//./_}_${nlinks}oh.bit -O fw/gem_ctp7_v${ctp7fw//./_}_${nlinks}oh.bit
+        echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit -O fw/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit"
+        wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit -O fw/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit
     fi
-
-    echo "ln -sf fw/gem_ctp7_v${ctp7fw//./_}_${nlinks}oh.bit fw/gem_ctp7.bit"
-    ln -sf gem_ctp7_v${ctp7fw//./_}_${nlinks}oh.bit fw/gem_ctp7.bit
-
+    echo "ln -sf fw/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit fw/gem_ctp7.bit"
+    ln -sf gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit fw/gem_ctp7.bit
+        
     if [ ! -f "xml/gem_amc_top_${ctp7fw//./_}.xml" ]
     then
         echo "CTP7 firmware xml/gem_amc_top_${ctp7fw//./_}.xml missing, downloading"
-        echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/address_table_v${ctp7fw//./_}_${nlinks}oh.zip"
-        wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/address_table_v${ctp7fw//./_}_${nlinks}oh.zip
-        echo "unzip address_table_v${ctp7fw//./_}_${nlinks}oh.zip"
-        unzip address_table_v${ctp7fw//./_}_${nlinks}oh.zip
-        echo "rm address_table_v${ctp7fw//./_}_${nlinks}oh.zip"
-        rm address_table_v${ctp7fw//./_}_${nlinks}oh.zip
-        echo "cp address_table_v${ctp7fw//./_}_${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml"
-        cp address_table_v${ctp7fw//./_}_${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml
-        echo "rm -rf address_table_v${ctp7fw//./_}_${nlinks}oh"
-        rm -rf address_table_v${ctp7fw//./_}_${nlinks}oh
+        echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip"
+        wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip
+        echo "unzip address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip"
+        unzip address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip
+        echo "rm address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip"
+        rm address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip
+        echo "cp address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml"
+        cp address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml
+        echo "rm -rf address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh"
+        rm -rf address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh
     fi
 
     echo "Download gemloader"
