@@ -21,8 +21,8 @@ then
 fi   
 
 echo "Updating symlinks"
-ln -s /mnt/persistent/gemdaq_${VX}/ /mnt/persistent/gemuser/gemdaq_USER
-ln -s /mnt/persistent/rpcmodules_${VX}/ /mnt/persistent/gemuser/rpcmodules_USER
+ln -snf /mnt/persistent/gemdaq_${VX} /mnt/persistent/gemuser/gemdaq_USER
+ln -snf /mnt/persistent/rpcmodules_${VX} /mnt/persistent/gemuser/rpcmodules_USER
 echo "Finished symlinks"
 
 echo "Running recover.sh"
