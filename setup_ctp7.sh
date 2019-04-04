@@ -161,15 +161,18 @@ then
     fi
 
     echo "Download gemloader"
-    #echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip"
-    #wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gemloader_v${ctp7fw//./_}.zip
-    #unzip gemloader_v${ctp7fw//./_}.zip
-    #rm -rf gemloader_v${ctp7fw//./_}.zip
-    # Temporary hack, above should hopefully be used once GEM_AMC releasing conforms
-    echo "wget https://github.com/evka85/GEM_AMC/releases/download/v3.5.0/gemloader_v3_5_0.zip"
-    wget https://github.com/evka85/GEM_AMC/releases/download/v3.5.0/gemloader_v3_5_0.zip
-    unzip gemloader_v3_5_0.zip
-    rm -rf gemloader_v3_5_0.zip
+    if [ ! -d "gemloader/" ]
+    then
+        mkdir gemloader
+    fi
+    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_clear_header.sh -P gemloader/"
+    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_clear_header.sh -P gemloader/
+    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_configure.sh -P gemloader/"
+    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_configure.sh -P gemloader/
+    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_load_test_data.sh -P gemloader/"
+    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_load_test_data.sh -P gemloader/
+    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_read.sh -P gemloader/"
+    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_read.sh -P gemloader/
 
     echo "ln -sf xml/gem_amc_top_v${ctp7fw//./_}.xml xml/gem_amc_top.xml"
     ln -sf gem_amc_v${ctp7fw//./_}.xml xml/gem_amc_top.xml
