@@ -186,8 +186,8 @@ then
             [yY]* )
                 echo "ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser}";
                 ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser} && /bin/save_passwd;
-                echo "rsync -aXch --progress --partial --links .profile .bashrc .viminfo .vimrc .inputrc ${newuser}@${ctp7host}:~/";
-                rsync -aXch --progress --partial --links .profile .bashrc .viminfo .vimrc .inputrc ${newuser}@${ctp7host}:~/;
+                echo "rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc ${newuser}@${ctp7host}:~/";
+                rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc ${newuser}@${ctp7host}:~/;
                 break;;
             [nN]* )
                 break;;
