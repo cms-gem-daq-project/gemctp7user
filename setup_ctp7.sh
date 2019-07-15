@@ -165,14 +165,12 @@ then
     then
         mkdir gemloader
     fi
-    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_clear_header.sh -P gemloader/"
-    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_clear_header.sh -P gemloader/
-    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_configure.sh -P gemloader/"
-    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_configure.sh -P gemloader/
-    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_load_test_data.sh -P gemloader/"
-    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_load_test_data.sh -P gemloader/
-    echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_read.sh -P gemloader/"
-    wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw//./_}/scripts/gemloader/gemloader_read.sh -P gemloader/
+    declare -a gemloaderArray=("gemloader_clear_header.sh" "gemloader_configure.sh" "gemloader_load_test_data.sh" "gemloader_read.sh")
+    for gemloaderFile in "${gemloaderArray[@]}"
+    do
+        echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw}/scripts/gemloader/${gemloaderFile} -P gemloader/"
+        wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw}/scripts/gemloader/${gemloaderFile} -P gemloader/
+    done
 
     echo "ln -sf xml/gem_amc_top_v${ctp7fw//./_}.xml xml/gem_amc_top.xml"
     ln -sf gem_amc_v${ctp7fw//./_}.xml xml/gem_amc_top.xml
