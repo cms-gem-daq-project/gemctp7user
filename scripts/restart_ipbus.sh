@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ipbstatus=$(ps |grep [i]pbus)
+ipbstatus=$(ps |egrep 'ipbus$')
 
 if [ "$?" = "1" ]
 then
