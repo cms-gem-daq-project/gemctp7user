@@ -4,26 +4,15 @@ helpstring="Usage: $0 [options] <CTP7 hostname>
   Options:
     -o OptoHybrid fw version
     -c CTP7 fw version
-    -g GE generation (1 for Ge1/1, 2 for GE2/1, optional. Defaults to GE1/1)
+    -g GE generation (1 for GE1/1, 2 for GE2/1, optional. Defaults to GE1/1)
     -l Number of OH links supported in the CTP7 fw
-    -x XHAL release version
+    -x XHAL SWrelease version (optional, if not specified, will select latest)
+    -m CTP7 modules SW release version (optional, if not specified, will select latest)
     -a CTP7 user account to create
     -u Update CTP7 libs/bins/fw images
 
 Plese report bugs to
 https://github.com/cms-gem-daq-project/gemctp7user"
-
-if [ -z "$XHAL_ROOT" ]
-then
-    echo "XHAL_ROOT is not set, please get the correct tag of XHAL code and source the setup.sh there. Exiting..."
-    exit
-fi
-
-if [ -z "$CTP7_MOD_ROOT" ]
-then
-    echo "CTP7_MOD_ROOT is not set, please get the correct tag of ctp7_modules code and source the setup.sh there. Exiting..."
-    exit
-fi
 
 while getopts "a:c:g:l:o:x:uh" opts
 do
@@ -32,7 +21,7 @@ do
             ctp7fw="$OPTARG";;
         g)
             ge_gen="$OPTARG";;
-        l) 
+        l)
             nlinks="$OPTARG";;
         o)
             ohfw="$OPTARG";;
@@ -42,6 +31,8 @@ do
             update="1";;
         x)
             xhaltag="$OPTARG";;
+        m)
+            ctp7modtag="$OPTARG";;
         h)
             echo >&2 ${helpstring}
             exit 1;;
@@ -65,54 +56,35 @@ then
     echo "Unable to ping host ${ctp7host}"
 fi
 
+GEM_FW_DIR=/opt/gemdaq/fw
+GEM_ADDRESS_TABLE_ROOT=/opt/cmsgemos/etc/maps
+XHAL_ROOT=/opt/xhal
+
 echo "Proceeding..."
 # create local links if requested
 if [ -n "${ohfw}" ]
 then
-    echo "creating links for OH firmware version: ${ohfw}"
+    OH_FW_DOWNLOAD_DIR=https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download
+    echo "Creating links for OH firmware version: ${ohfw}"
     if [[ ${ohfw} = *"3."* ]]
-    then 
+    then
         echo "Downloading V3 firmware with tag ${ohfw}"
-        echo "wget https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download/${ohfw}/OH_${ohfw}.tar.gz"
-        wget https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download/${ohfw}/OH_${ohfw}.tar.gz 
+        set -x
+        curl -L -O ${OH_FW_DOWNLOAD_DIR}/${ohfw}/OH_${ohfw}.tar.gz
+        set +x
         echo "Untar and copy firmware files and xml address table to relevant locations"
-        echo "tar -xvf OH_${ohfw}.tar.gz"
-        tar -xvf OH_${ohfw}.tar.gz
-        echo "cp OH_${ohfw}/OH_${ohfw}.mcs oh_fw/optohybrid_${ohfw}.mcs"
-        cp OH_${ohfw}/OH_${ohfw//_/-}.mcs oh_fw/optohybrid_${ohfw}.mcs
-        echo "cp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit"
-        cp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit
-        echo "cp OH_${ohfw}/oh_registers.xml xml/optohybrid_registers_${ohfw}.xml"
-        cp OH_${ohfw}/oh_registers_${ohfw}.xml xml/oh_registers_${ohfw}.xml
-        echo "ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit"
+        set -x
+        tar xvf OH_${ohfw}.tar.gz
+        cp -rfp OH_${ohfw}/OH_${ohfw//_/-}.mcs oh_fw/optohybrid_${ohfw}.mcs
+        cp -rfp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit
+        cp -rfp OH_${ohfw}/oh_registers_${ohfw}.xml xml/oh_registers_${ohfw}.xml
         ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit
-        echo "ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs"
         ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs
-        echo "ln -sf xml/oh_registers_${ohfw}.mcs oh_fw/optohybrid_registers.xml"
         ln -sf oh_registers_${ohfw}.xml xml/optohybrid_registers.xml
-        echo "rm -rf OH_${ohfw}/"
-        rm -rf OH_${ohfw}/
-        echo "rm -rf OH_${ohfw}.tar.gz"
-        rm -rf OH_${ohfw}.tar.gz
+        rm -rf OH_${ohfw}*
+        set +x
     else
-        if [ ! -f "oh_fw/optohybrid_${ohfw}.bit" ]
-        then
-            echo "OH firmware oh_fw/optohybrid_${ohfw}.bit downloading"
-            echo "wget https://github.com/thomaslenzi/OptoHybridv2/releases/download/${ohfw}/OH_${ohfw//./_}_GBT.bit -O oh_fw/optohybrid_${ohfw}.bit"
-            wget https://github.com/thomaslenzi/OptoHybridv2/releases/download/${ohfw}/OH_${ohfw//./_}_GBT.bit -O oh_fw/optohybrid_${ohfw}.bit
-        fi
-        echo "ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit"
-        ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit
-
-        if [ ! -f "oh_fw/optohybrid_${ohfw}.mcs" ]
-        then
-            echo "OH firmware oh_fw/optohybrid_${ohfw}.mcs missing, downloading"
-            echo "wget https://github.com/thomaslenzi/OptoHybridv2/releases/download/${ohfw}/OH_${ohfw//./_}_GBT.mcs -O oh_fw/optohybrid_${ohfw}.mcs"
-            wget https://github.com/thomaslenzi/OptoHybridv2/releases/download/${ohfw}/OH_${ohfw//./_}_GBT.mcs -O oh_fw/optohybrid_${ohfw}.mcs
-        fi
-
-        echo "ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs"
-        ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs
+        echo "Invalid OptoHybrid firmware version specified"
     fi
 fi
 if [ -n "${ge_gen}" ]
@@ -120,74 +92,88 @@ then
     if [[ ${ge_gen} = "2" ]]
     then
         ge21suf="ge21_"
-    else 
+    else
         ge21suf=""
     fi
 fi
 
 if [ -n "${ctp7fw}" ]
 then
+    AMC_FW_DOWNLOAD_DIR=https://github.com/evka85/GEM_AMC/releases/download
+    AMC_FW_RAW_DIR=https://raw.githubusercontent.com/evka85/GEM_AMC
 
     if [[ ${ctp7fw} = *"3."* ]]
     then
         ln -sf recover_v3.sh scripts/recover.sh
-    else 
+    else
         ln -sf recover_v2.sh scripts/recover.sh
     fi
-    # echo "creating links for CTP7 firmware version: ${ctpfw}"
 
-    if [ ! -f "fw/gem_ctp7_gem_ctp7_v${ctp7fw//./_}.bit" ]
+    fwbase="v${ctp7fw//./_}_${ge21suf}${nlinks}oh"
+    fwfile="gem_ctp7_${fwbase}.bit"
+    pushd fw
+    if [ ! -f "${fwfile}" ]
     then
-        echo "CTP7 firmware fw/gem_ctp7_v${ctp7fw//./_}.bit missing, downloading"
-        echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit -O fw/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit"
-        wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit -O fw/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit
+        echo "CTP7 firmware fw/${fwfile} missing, downloading"
+        set -x
+        curl -L -O ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/${fwfile}
+        set +x
     fi
-    echo "ln -sf fw/gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit fw/gem_ctp7.bit"
-    ln -sf gem_ctp7_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.bit fw/gem_ctp7.bit
-        
+    set -x
+    ln -sf ${fwfile} gem_ctp7.bit
+    set +x
+    popd
+
+    pushd xml
     if [ ! -f "xml/gem_amc_top_${ctp7fw//./_}.xml" ]
     then
         echo "CTP7 firmware xml/gem_amc_top_${ctp7fw//./_}.xml missing, downloading"
-        echo "wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip"
-        wget https://github.com/evka85/GEM_AMC/releases/download/v${ctp7fw}/address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip
-        echo "unzip address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip"
-        unzip address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip
-        echo "rm address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip"
-        rm address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh.zip
-        echo "cp address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml"
-        cp address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh/gem_amc_top.xml xml/gem_amc_v${ctp7fw//./_}.xml
-        echo "rm -rf address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh"
-        rm -rf address_table_v${ctp7fw//./_}_${ge21suf}${nlinks}oh
+        set -x
+        curl -L -O ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/address_table_${fwbase}.zip
+        unzip address_table_${fwbase}.zip
+        rm address_table_${fwbase}.zip
+        cp -rfp address_table_${fwbase}/gem_amc_top.xml gem_amc_v${ctp7fw//./_}.xml
+        rm -rf address_table_${fwbase}
+        set +x
     fi
+
+    set -x
+    ln -sf gem_amc_v${ctp7fw//./_}.xml gem_amc_top.xml
+    set +x
+    popd
 
     echo "Download gemloader"
-    if [ ! -d "gemloader/" ]
-    then
-        mkdir gemloader
-    fi
-    declare -a gemloaderArray=("gemloader_clear_header.sh" "gemloader_configure.sh" "gemloader_load_test_data.sh" "gemloader_read.sh")
+    mkdir -p gemloader
+
+    declare -a gemloaderArray=(
+        "gemloader_clear_header.sh"
+        "gemloader_configure.sh"
+        "gemloader_load_test_data.sh"
+        "gemloader_read.sh"
+    )
+    pushd gemloader
     for gemloaderFile in "${gemloaderArray[@]}"
     do
-        echo "wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw}/scripts/gemloader/${gemloaderFile} -P gemloader/"
-        wget https://raw.githubusercontent.com/evka85/GEM_AMC/v${ctp7fw}/scripts/gemloader/${gemloaderFile} -P gemloader/
+        set -x
+        curl -L -O ${AMC_FW_RAW_DIR}/v${ctp7fw}/scripts/gemloader/${gemloaderFile}
+        set +x
     done
-
-    echo "ln -sf xml/gem_amc_top_v${ctp7fw//./_}.xml xml/gem_amc_top.xml"
-    ln -sf gem_amc_v${ctp7fw//./_}.xml xml/gem_amc_top.xml
+    popd
 fi
 
-# create new CTP7 user if requested
-if [ -n "${newuser}" ]
+# create new CTP7 user if requested and newuser doesn't exist
+ssh -t root@${ctp7host} cat /etc/passwd|egrep ${newuser} >/dev/null
+if [ -n "${newuser}" && ! "$?" = "0" ]
 then
     read -p "Create CTP7 user account: ${newuser} (y|n) : " create
     while true
     do
         case $create in
             [yY]* )
-                echo "ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser}";
+                set -x
                 ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser} && /bin/save_passwd;
-                echo "rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc ${newuser}@${ctp7host}:~/";
                 rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc ${newuser}@${ctp7host}:~/;
+                set +x
                 break;;
             [nN]* )
                 break;;
@@ -197,86 +183,90 @@ then
     done
 fi
 
-# Download xhal tag
-if [ -n "${xhaltag}" ]
-then
-    echo "Fetching xhal binaries and libraries"
-    res=$(curl -s --head https://github.com/cms-gem-daq-project/xhal/releases/tag/${xhaltag} | head -n 1 | grep "HTTP/1.[01] [23]..")
-    if [ -n "${res}" ]
-    then
-        echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/ipbus -O bin/ipbus"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/ipbus -O bin/ipbus
-
-        echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/liblog4cplus.so  -O lib/liblog4cplus.so"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/liblog4cplus.so  -O lib/liblog4cplus.so
-        echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/libxhal_ctp7.so  -O lib/libxhal_ctp7.so"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/libxhal_ctp7.so  -O lib/libxhal_ctp7.so
-        echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/libxerces-c.so   -O lib/libxerces-c.so"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/libxerces-c.so   -O lib/libxerces-c.so
-        echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/librwreg_ctp7.so -O lib/librwreg_ctp7.so"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/librwreg.so -O lib/librwreg.so
-        echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/liblmdb.so       -O lib/liblmdb.so"
-        wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/liblmdb.so       -O lib/liblmdb.so
-
-        echo "ln -sf libxhal_ctp7.so lib/libxhal.so"
-        ln -sf libxhal_ctp7.so lib/libxhal.so
-        echo "ln -sf libxerces-c.so lib/libxerces-c-3.1.so"
-        ln -sf libxerces-c.so lib/libxerces-c-3.1.so
-        echo "ln -sf liblog4cplus.so lib/liblog4cplus-1.1.so.9"
-        ln -sf liblog4cplus.so lib/liblog4cplus-1.1.so.9
-    else
-        echo "Unable to find specified tag ${xhaltag} in list of xhal releases (https://github.com/cms-gem-daq-project/xhal/releases)"
-        echo "Please verify that the specified tag exists"
-        exit
-    fi
-
-    echo "wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/reg_interface.zip && unzip reg_interface.zip && rm reg_interface.zip"
-    wget https://github.com/cms-gem-daq-project/xhal/releases/download/${xhaltag}/reg_interface.zip
-    unzip reg_interface.zip -d python/
-    rm reg_interface.zip
-fi
-
 # Update CTP7 gemdaq paths
+CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
+GEMDAQ_DOWNLOAD_URL=https://cern.ch/cmsgemdaq/sw/gemos/repos/releases/legacy/base/tarballs
 if [ -n "${update}" ]
 then
     echo "Creating/updating CTP7 gemdaq directory structure"
-    echo "ssh root@${ctp7host} mkdir -p /mnt/persistent/gemdaq"
-    echo "ssh root@${ctp7host} mkdir -p /mnt/persistent/gemdaq/address_table.mdb"
-    echo "ssh root@${ctp7host} touch /mnt/persistent/gemdaq/address_table.mdb/data.mdb"
-    echo "ssh root@${ctp7host} touch /mnt/persistent/gemdaq/address_table.mdb/lock.mdb"
-    echo "ssh root@${ctp7host} chmod -R 777 /mnt/persistent/gemdaq/address_table.mdb"
-    ssh root@${ctp7host} mkdir -p /mnt/persistent/gemdaq && mkdir -p /mnt/persistent/gemdaq/address_table.mdb && touch /mnt/persistent/gemdaq/address_table.mdb/data.mdb && touch /mnt/persistent/gemdaq/address_table.mdb/lock.mdb && chmod -R 777 /mnt/persistent/gemdaq/address_table.mdb
+    set -x
+    ssh root@${ctp7host} \
+        mkdir -p ${CARD_GEMDAQ_DIR} && \
+        mkdir -p ${CARD_GEMDAQ_DIR}/address_table.mdb && \
+        touch ${CARD_GEMDAQ_DIR}/address_table.mdb/data.mdb && \
+        touch ${CARD_GEMDAQ_DIR}/address_table.mdb/lock.mdb && \
+        chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb
+    set +x
 
-    find . -type d -print0 | xargs -0 -n1 chmod a+rx
-    find . -type f -print0 | xargs -0 -n1 chmod a+r
-    find bin -type f -print0 | xargs -0 -n1 chmod a+rx
-    find lib -type f -print0 | xargs -0 -n1 chmod a+rx
+    find . -type d -print0 -exec chmod a+rx {} \+
+    find . -type f -print0 -exec chmod a+r  {} \+
+    find bin -type f -print0 -exec chmod a+rx {} \+
+    find lib -type f -print0 -exec chmod a+rx {} \+
 
-    echo "wget https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/develop/conf/conf.txt"
-    wget https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/develop/conf/conf.txt
-    echo "cp conf.txt vfat3/conf.txt"
-    cp conf.txt vfat3/conf.txt
-    echo "rm -rf conf.txt"
+    ## Take latest versions
+    tarballs=(
+        ctp7-base.tgz    ## ipbus, liblmdb.so
+        reedmuller.tgz   ## libreedmuller.so, rmencode, rmdecode
+        rwreg.tgz        ## librwreg.so
+        reg_utils.tgz    ## reg_interface
+        xhal.tgz         ## libxhal.so, reg_interface_gem
+        ctp7_modules.tgz ## ctp7 RPC modules
+    )
+    for tb in ${tarballs[@]}
+    do
+        curl -L -O ${GEMDAQ_DOWNLOAD_URL}/${tb}
+        tar xzf ${tb}
+        rm -rf ${tb}
+    done
 
-    echo "rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python vfat3 root@${ctp7host}:/mnt/persistent/gemdaq/"
-    rsync -ach --progress --partial --links bin fw lib oh_fw scripts xml python gemloader vfat3 root@${ctp7host}:/mnt/persistent/gemdaq/
-   
+    ## Override if a specific version is specified
+    if [ -n "${xhaltag}" ]
+    then
+        curl -L ${GEMDAQ_DOWNLOAD_URL}/xhal-${xhaltag}.tgz -o xhal.tgz
+        tar xzf xhal.tgz
+        rm -rf xhal.zip
+    fi
+
+    if [ -n "${ctp7modtag}" ]
+    then
+        curl -L ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules-${ctp7modtag}.tgz -o ctp7_modules.tgz
+        tar xzf ctp7_modules.tgz
+        rm -rf ctp7_modules.tgz
+    fi
+
+    ## Obsolete?
+    set -x
+    curl -L https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/release/legacy-1.1/conf/conf.txt \
+         -o vfat3/conf.txt
+    rsync -ach --progress --partial --links mnt root@${ctp7host}:/
+    rsync -ach --progress --partial --links fw oh_fw scripts xml python gemloader vfat3 root@${ctp7host}:${CARD_GEMDAQ_DIR}/
+    set +x
+
     echo "Update LMDB address table on the CTP7, make a new .pickle file and resync xml folder"
-    echo "cp xml/* $XHAL_ROOT/etc/"
-    cp xml/* $XHAL_ROOT/etc/
+    set -x
+    cp -rfp xml/* ${GEM_ADDRESS_TABLE_ROOT}/
+    set +x
+
     echo "Upload rpc modules and restart rpcsvc"
-    scp -r $CTP7_MOD_ROOT/lib/*.so root@${ctp7host}:/mnt/persistent/rpcmodules 
     ssh root@${ctp7host} killall rpcsvc
-    if [ -n "${newuser}" ]
+    ssh -t root@${ctp7host} cat /etc/passwd|egrep ${newuser} >/dev/null
+    if [ "$?" = "0" ]
     then
         ssh -t ${newuser}@${ctp7host} 'sh -lic "rpcsvc"'
     else
+        ## Obsolete, just drop full stop?
         ssh -t texas@${ctp7host} 'sh -lic "rpcsvc"'
     fi
-    echo "python python/reg_interface/reg_interface.py -n ${ctp7host} -e update_lmdb /mnt/persistent/gemdaq/xml/gem_amc_top.xml"
-    python $XHAL_ROOT/python/reg_interface/reg_interface.py -n ${ctp7host} -e update_lmdb /mnt/persistent/gemdaq/xml/gem_amc_top.xml
-    cp $XHAL_ROOT/etc/gem_amc_top.pickle xml/gem_amc_top.pickle
-    rsync -ach --progress --partial --links xml root@${ctp7host}:/mnt/persistent/gemdaq/
+
+    pushd xml
+    set -x
+    python ${XHAL_ROOT}/bin/gem_reg.py -n ${ctp7host} \
+           -e update_lmdb ${CARD_GEMDAQ_DIR}/xml/gem_amc_top.xml
+    cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/gem_amc_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
+    ln -sf gem_amc_v${ctp7fw//./_}.pickle gem_amc_top.pickle
+    set +x
+    popd
+    rsync -ach --progress --partial --links xml root@${ctp7host}:${CARD_GEMDAQ_DIR}/
 
     echo "Cleaning local temp folders"
     rm ./bin/*
@@ -284,7 +274,8 @@ then
     rm ./lib/*
     rm ./fw/*
     rm ./oh_fw/*
-    rm -rf ./python/reg_interface
     rm ./xml/*
+    rm -rf ./mnt
+    rm -rf ./python/reg_interface
     rm -rf ./gemloader
 fi
