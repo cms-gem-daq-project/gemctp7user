@@ -10,6 +10,7 @@ fi
 export GEM_PATH=/mnt/persistent/gemdaq
 export PATH=$PATH:$GEM_PATH/scripts:$GEM_PATH/bin
 export PATH=$GEM_PATH/python/reg_interface:$PATH
+export PYTHON_PATH=$GEM_PATH/python:$PYTHON_PATH
 export PATH=$HOME/bin:$PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GEM_PATH/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/persistent/rpcmodules
