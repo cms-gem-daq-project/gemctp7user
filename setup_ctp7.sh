@@ -1,20 +1,25 @@
 #!/bin/sh
 
-helpstring="Usage: $0 [options] <CTP7 hostname>
-  Options:
-    -o OptoHybrid fw version
-    -c CTP7 fw version
-    -g GE generation (1 for GE1/1, 2 for GE2/1, optional. Defaults to GE1/1)
-    -l Number of OH links supported in the CTP7 fw
-    -x XHAL SWrelease version (optional, if not specified, will select latest)
-    -m CTP7 modules SW release version (optional, if not specified, will select latest)
-    -a CTP7 user account to create
-    -u Update CTP7 libs/bins/fw images
+usage() {
 
-Plese report bugs to
-https://github.com/cms-gem-daq-project/gemctp7user"
+    echo "Usage: $0 [options] <CTP7 hostname>"
+    echo "  Options:"
+    echo "    -o OptoHybrid fw version (version 3.X.Y supported)"
+    echo "    -c CTP7 fw version (version 3.X.Y supported"
+    echo "    -g GE generation (1 for GE1/1, 2 for GE2/1, optional. Defaults to GE1/1)"
+    echo "    -l Number of OH links supported in the CTP7 fw"
+    echo "    -x XHAL SWrelease version (optional, if not specified, will select latest)"
+    echo "    -m CTP7 modules SW release version (optional, if not specified, will select latest)"
+    echo "    -a Create the gemuser CTP7 user account"
+    echo "    -u Update CTP7 libs/bins/fw images"
+    echo ""
+    echo "Plese report bugs to"
+    echo "https://github.com/cms-gem-daq-project/gemctp7user"
 
-while getopts "a:c:g:l:o:x:uh" opts
+    kill -INT $$
+}
+
+while getopts "ac:g:l:o:x:uh" opts
 do
     case $opts in
         c)
@@ -26,7 +31,7 @@ do
         o)
             ohfw="$OPTARG";;
         a)
-            newuser="$OPTARG";;
+            gemuser="1";;
         u)
             update="1";;
         x)
@@ -34,14 +39,11 @@ do
         m)
             ctp7modtag="$OPTARG";;
         h)
-            echo >&2 ${helpstring}
-            exit 1;;
+            usage;;
         \?)
-            echo >&2 ${helpstring}
-            exit 1;;
+            usage;;
         [?])
-            echo >&2 ${helpstring}
-            exit 1;;
+            usage;;
     esac
 done
 
@@ -54,6 +56,7 @@ ctp7up=$?
 if [ $ctp7up != 0 ]
 then
     echo "Unable to ping host ${ctp7host}"
+    usage
 fi
 
 GEM_FW_DIR=/opt/gemdaq/fw
@@ -85,6 +88,7 @@ then
         set +x
     else
         echo "Invalid OptoHybrid firmware version specified"
+        usage
     fi
 fi
 if [ -n "${ge_gen}" ]
@@ -102,11 +106,10 @@ then
     AMC_FW_DOWNLOAD_DIR=https://github.com/evka85/GEM_AMC/releases/download
     AMC_FW_RAW_DIR=https://raw.githubusercontent.com/evka85/GEM_AMC
 
-    if [[ ${ctp7fw} = *"3."* ]]
+    if ! [[ ${ctp7fw} =~ *"3."* ]]
     then
-        ln -sf recover_v3.sh scripts/recover.sh
-    else
-        ln -sf recover_v2.sh scripts/recover.sh
+        echo "Unsupported CTP7 FW version (${ctp7fw})"
+        usage
     fi
 
     fwbase="v${ctp7fw//./_}_${ge21suf}${nlinks}oh"
@@ -161,18 +164,18 @@ then
     popd
 fi
 
-# create new CTP7 user if requested and newuser doesn't exist
-ssh -t root@${ctp7host} cat /etc/passwd|egrep ${newuser} >/dev/null
-if [ -n "${newuser}" && ! "$?" = "0" ]
+# create new CTP7 user if requested and gemuser doesn't exist
+ssh -t root@${ctp7host} cat /etc/passwd|egrep ${gemuser} >/dev/null
+if [ -n "${gemuser}" && ! "$?" = "0" ]
 then
-    read -p "Create CTP7 user account: ${newuser} (y|n) : " create
+    read -p "Create CTP7 user account: ${gemuser} (y|n) : " create
     while true
     do
         case $create in
             [yY]* )
                 set -x
-                ssh root@${ctp7host} /usr/sbin/adduser ${newuser} -h /mnt/persistent/${newuser} && /bin/save_passwd;
-                rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc ${newuser}@${ctp7host}:~/;
+                ssh root@${ctp7host} /usr/sbin/adduser ${gemuser} -h /mnt/persistent/${gemuser} && /bin/save_passwd;
+                rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc ${gemuser}@${ctp7host}:~/;
                 set +x
                 break;;
             [nN]* )
@@ -249,13 +252,13 @@ then
 
     echo "Upload rpc modules and restart rpcsvc"
     ssh root@${ctp7host} killall rpcsvc
-    ssh -t root@${ctp7host} cat /etc/passwd|egrep ${newuser} >/dev/null
+    ssh -t root@${ctp7host} cat /etc/passwd|egrep ${gemuser} >/dev/null
     if [ "$?" = "0" ]
     then
-        ssh -t ${newuser}@${ctp7host} 'sh -lic "rpcsvc"'
+        ssh -t ${gemuser}@${ctp7host} 'sh -lic "rpcsvc"'
     else
-        ## Obsolete, just drop full stop?
-        ssh -t texas@${ctp7host} 'sh -lic "rpcsvc"'
+        echo "CTP7 gemuser account does not exist on ${ctp7host}"
+        usage
     fi
 
     pushd xml
