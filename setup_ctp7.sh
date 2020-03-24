@@ -189,7 +189,7 @@ fi
 
 # create new CTP7 user if requested and gemuser doesn't exist
 ssh -t root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
-if [ -n "${gemuser}" && ! "$?" = "0" ]
+if ! [ "$?" = "0" ] && [ -n "${gemuser}" ]
 then
     read -p "Create CTP7 user account: gemuser (y|n) : " create
     while true
