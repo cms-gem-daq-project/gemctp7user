@@ -188,26 +188,31 @@ then
 fi
 
 # create new CTP7 user if requested and gemuser doesn't exist
-ssh -t root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
-if ! [ "$?" = "0" ] && [ -n "${gemuser}" ]
+if [ -n "${gemuser}" ]
 then
-    read -p "Create CTP7 user account: gemuser (y|n) : " create
-    while true
-    do
-        case $create in
-            [yY]* )
-                set -x
-                ssh root@${ctp7host} /usr/sbin/adduser gemuser -h /mnt/persistent/gemuser && /bin/save_passwd;
-                ssh gemuser@${ctp7host} mkdir -p ~/logs
-                rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc gemuser@${ctp7host}:~/;
-                set +x
-                break;;
-            [nN]* )
-                break;;
-            * )
-                echo "Enter y or n (case insensitive)";;
-        esac
-    done
+    ssh -t root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
+    if ! [ "$?" = "0" ]
+    then
+        read -p "Create CTP7 user account: gemuser (y|n) : " create
+        while true
+        do
+            case $create in
+                [yY]* )
+                    set -x
+                    ssh root@${ctp7host} '/usr/sbin/adduser gemuser -h /mnt/persistent/gemuser && /bin/save_passwd'
+                    ssh gemuser@${ctp7host} 'mkdir -p ~/logs'
+                    rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc gemuser@${ctp7host}:~/
+                    set +x
+                    break;;
+                [nN]* )
+                    break;;
+                * )
+                    echo "Enter y or n (case insensitive)";;
+            esac
+        done
+    else
+        echo "CTP7 user gemuser already exists"
+    fi
 fi
 
 # Update CTP7 gemdaq paths
@@ -217,12 +222,12 @@ if [ -n "${update}" ]
 then
     echo "Creating/updating CTP7 gemdaq directory structure"
     set -x
-    ssh root@${ctp7host} \
-        mkdir -p ${CARD_GEMDAQ_DIR} && \
-        mkdir -p ${CARD_GEMDAQ_DIR}/address_table.mdb && \
-        touch ${CARD_GEMDAQ_DIR}/address_table.mdb/data.mdb && \
-        touch ${CARD_GEMDAQ_DIR}/address_table.mdb/lock.mdb && \
-        chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb
+    ssh root@${ctp7host} "echo Setting up  ${CARD_GEMDAQ_DIR} && \
+mkdir -p ${CARD_GEMDAQ_DIR} && \
+mkdir -p ${CARD_GEMDAQ_DIR}/address_table.mdb && \
+touch ${CARD_GEMDAQ_DIR}/address_table.mdb/data.mdb && \
+touch ${CARD_GEMDAQ_DIR}/address_table.mdb/lock.mdb && \
+chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     set +x
 
     mkdir -p ${ctp7host}
@@ -289,11 +294,11 @@ then
     set +x
 
     echo "Upload rpc modules and restart rpcsvc"
-    ssh root@${ctp7host} killall rpcsvc
+    ssh root@${ctp7host} 'killall rpcsvc'
     ssh -t root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
     if [ "$?" = "0" ]
     then
-        ssh -t gemuser@${ctp7host} 'sh -lic "rpcsvc"'
+        ssh -t gemuser@${ctp7host} 'rpcsvc'
     else
         echo "CTP7 gemuser account does not exist on ${ctp7host}"
         usage
