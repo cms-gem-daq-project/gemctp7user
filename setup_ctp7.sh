@@ -226,6 +226,12 @@ then
     set +x
 
     mkdir -p ${ctp7host}
+    pushd scripts
+    gesuf=${gesuf%*_}
+    gesuf=${gesuf%%v*}
+    ln -sfn ${gesuf}/*.sh .
+    popd
+
     cp -rfp -t ${ctp7host} bin lib python fw oh_fw gemloader scripts xml
 
     pushd ${ctp7host}
