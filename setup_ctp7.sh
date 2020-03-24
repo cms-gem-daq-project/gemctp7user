@@ -6,7 +6,13 @@ usage() {
     echo "  Options:"
     echo "    -o OptoHybrid fw version (version 3.X.Y supported)"
     echo "    -c CTP7 fw version (version 3.X.Y supported"
-    echo "    -g GE generation (1 for GE1/1, 2 for GE2/1, 0 for ME0. Defaults to GE1/1)"
+    echo "    -g GE generation, defaults to GE1/1"
+    echo "         options are:"
+    echo "           1 for GE1/1"
+    echo "           2 (alias for 22"
+    echo "           21 for GE2/1 V1 OptoHybrid"
+    echo "           22 for GE2/1 V2 OptoHybrid"
+    echo "           0 for ME0. "
     echo "    -l Number of OH links supported in the CTP7 fw"
     echo "    -x XHAL SW release version (optional, if not specified, will select latest)"
     echo "    -m CTP7 modules SW release version (optional, if not specified, will select latest)"
@@ -79,11 +85,9 @@ then
         echo "Untar and copy firmware files and xml address table to relevant locations"
         set -x
         tar xvf OH_${ohfw}.tar.gz
-        cp -rfp OH_${ohfw}/OH_${ohfw//_/-}.mcs oh_fw/optohybrid_${ohfw}.mcs
         cp -rfp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit
         cp -rfp OH_${ohfw}/oh_registers_${ohfw}.xml xml/oh_registers_${ohfw}.xml
         ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit
-        ln -sf optohybrid_${ohfw}.mcs oh_fw/optohybrid_top.mcs
         ln -sf oh_registers_${ohfw}.xml xml/optohybrid_registers.xml
         rm -rf OH_${ohfw}*
         set +x
@@ -98,9 +102,17 @@ fi
 
 if [ -n "${ge_gen}" ]
 then
-    if [[ ${ge_gen} = "2" ]]
+    if ! [[ "${ge_gen}" =~ 0|1|2(1|2)? ]]
     then
-        gesuf="ge21_v2_"
+        echo "Invalid GEM generation specified ${ge_gen}"
+        usage
+    fi
+    if [[ ${ge_gen} = "21" ]]
+    then
+        gesuf="ge21v1_"
+    elif [[ ${ge_gen} =~ "^22?" ]]
+    then
+        gesuf="ge21v2_"
     elif [[ ${ge_gen} = "0" ]]
     then
         gesuf="me0_"
