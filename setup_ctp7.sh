@@ -237,7 +237,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     ln -sfn ${gesuf}/*.sh .
     popd
 
-    cp -rfp -t ${ctp7host} bin lib python fw oh_fw gemloader scripts xml
+    cp -rfp -t ${ctp7host} bin lib fw oh_fw gemloader scripts xml
 
     pushd ${ctp7host}
     find . -type d -print0 -exec chmod a+rx {} \+
@@ -284,7 +284,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     curl -L https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/release/legacy-1.1/conf/conf.txt \
          -o vfat3/conf.txt
     rsync -ach --progress --partial --links mnt root@${ctp7host}:/
-    rsync -ach --progress --partial --links fw oh_fw scripts xml python gemloader vfat3 \
+    rsync -ach --progress --partial --links fw oh_fw scripts xml gemloader vfat3 \
          root@${ctp7host}:${CARD_GEMDAQ_DIR}/
     set +x
 
@@ -324,6 +324,5 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     echo rm ./oh_fw/*
     echo rm ./xml/*
     echo rm -rf ./mnt
-    echo rm -rf ./python/*
     echo rm -rf ./gemloader
 fi
