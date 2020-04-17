@@ -16,7 +16,7 @@ gem_reg.py -e write "GEM_AMC.SLOW_CONTROL.SCA.CTRL.TTC_HARD_RESET_EN 0"
 
 echo "Load OH FW to the RAM for promless progamming"
 echo "./gemloader_configure.sh"
-source /mnt/persistent/gemdaq/gemloader/gemloader_configure_ge21.sh
+source /mnt/persistent/gemdaq/gemloader/gemloader_configure.sh
 
 echo "Restarting the ipbus service"
 killall ipbus
