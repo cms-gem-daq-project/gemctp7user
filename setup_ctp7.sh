@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 
 usage() {
 
@@ -100,27 +100,41 @@ then
     fi
 fi
 
+set -x
 if [ -n "${ge_gen}" ]
 then
-    if ! [[ "${ge_gen}" =~ 0|1|2(1|2)? ]]
+    genre='^([01]|(2[12]?))$'
+    if ! [[ "${ge_gen}" =~ ${genre} ]]
     then
         echo "Invalid GEM generation specified ${ge_gen}"
         usage
     fi
     if [[ ${ge_gen} = "21" ]]
     then
+        echo "Using GE2/1 OHv1"
         gesuf="ge21v1_"
-    elif [[ ${ge_gen} =~ "^22?" ]]
+    elif [[ ${ge_gen} =~ "2" ]]
     then
+        echo "Using GE2/1 OHv2"
         gesuf="ge21v2_"
     elif [[ ${ge_gen} = "0" ]]
     then
+        echo "Using ME0 OH"
         gesuf="me0_"
     else
+        echo "Using GE1/1 OH"
         gesuf="ge11_"
     fi
 else
+    echo "Using GE1/1 OH (default)"
     gesuf="ge11_"
+fi
+set +x
+
+if ! [ -n "${nlinks}" ]
+then
+    echo "Assuming nlinks=12"
+    nlinks=12
 fi
 
 if [ -n "${ctp7fw}" ]
@@ -234,7 +248,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     pushd scripts
     gesuf=${gesuf%*_}
     gesuf=${gesuf%%v*}
-    ln -sfn ${gesuf}/*.sh .
+    cp -rfp ${gesuf}/*.sh .
     popd
 
     cp -rfp -t ${ctp7host} bin lib fw oh_fw gemloader scripts xml
@@ -252,6 +266,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
         rwreg.tgz         ## librwreg.so
         reg_interface.tgz ## reg_interface
         xhal.tgz          ## libxhal.so, reg_interface_gem
+        # ctp7_modules_${gesuf}.tgz  ## ctp7 RPC modules FIXME
         ctp7_modules.tgz  ## ctp7 RPC modules
     )
     set -x
@@ -272,6 +287,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
 
     if [ -n "${ctp7modtag}" ]
     then
+        # curl -L ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules-${ctp7modtag}_${gesuf}.tgz -o ctp7_modules.tgz ## FIXME
         curl -L ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules-${ctp7modtag}.tgz -o ctp7_modules.tgz
         tar xzf ctp7_modules.tgz
         rm -rf ctp7_modules.tgz
@@ -308,7 +324,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     set -x
     python ${XHAL_ROOT}/bin/gem_reg.py -n ${ctp7host} \
            -e update_lmdb ${CARD_GEMDAQ_DIR}/xml/gem_amc_top.xml
-    cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/gem_amc_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
+    cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
     ln -sf gem_amc_v${ctp7fw//./_}.pickle gem_amc_top.pickle
     set +x
     popd
