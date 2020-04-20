@@ -172,7 +172,8 @@ then
         curl -L -O ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/address_table_${fwbase}.zip
         unzip address_table_${fwbase}.zip
         rm address_table_${fwbase}.zip
-        cp -rfp address_table_${fwbase}/gem_amc_top.xml gem_amc_v${ctp7fw//./_}.xml
+        cp -rfp address_table_${fwbase}/gem_amc_top.xml gem_amc_${fwbase}.xml
+        ln -sf gem_amc_${fwbase}.xml gem_amc_v${ctp7fw//./_}.xml
         rm -rf address_table_${fwbase}
         set +x
     fi
