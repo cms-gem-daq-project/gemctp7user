@@ -65,6 +65,7 @@ then
     usage
 fi
 
+CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
 GEM_FW_DIR=/opt/gemdaq/fw
 GEM_ADDRESS_TABLE_ROOT=/opt/cmsgemos/etc/maps
 XHAL_ROOT=/opt/xhal
@@ -90,6 +91,8 @@ then
         ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit
         ln -sf oh_registers_${ohfw}.xml xml/optohybrid_registers.xml
         rm -rf OH_${ohfw}*
+        rsync -ach --progress --partial --links oh_fw xml \
+              root@${ctp7host}:${CARD_GEMDAQ_DIR}/
         set +x
     else
         echo "Invalid OptoHybrid firmware version specified (${ohfw})"
@@ -200,6 +203,9 @@ then
         set +x
     done
     popd
+
+    rsync -ach --progress --partial --links fw gemloader xml \
+          root@${ctp7host}:${CARD_GEMDAQ_DIR}/
 fi
 
 # create new CTP7 user if requested and gemuser doesn't exist
@@ -231,7 +237,6 @@ then
 fi
 
 # Update CTP7 gemdaq paths
-CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
 GEMDAQ_DOWNLOAD_URL=https://cern.ch/cmsgemdaq/sw/gemos/repos/releases/legacy/base/tarballs
 if [ -n "${update}" ]
 then
