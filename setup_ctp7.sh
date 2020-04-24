@@ -24,6 +24,7 @@ create_tmp_card() {
 
     if ! [ -n "${tmpcard}" ] || ! [ -d  "${tmpcard}" ]
     then
+        echo "Downloading artifacts to ${tmpdir}"
         ## Create a local temp structure for the artifacts
         tmpdir=$(mktemp -d /tmp/tmp.XXXXXX)
 
@@ -39,7 +40,7 @@ create_tmp_card() {
 
 cleanup() {
 
-    if ! [ -n "${KEEP_ARTIFACTS}" ]
+    if ! [ -n "${KEEP_ARTIFACTS}" ] && [ -n "${tmpdir}" ]
     then
         echo "Cleaning up ${tmpdir}"
         rm -rf ${tmpdir}
@@ -157,7 +158,7 @@ update_oh_fw() {
         pushd ${tmpdir}
 
         ${DEBUG} ${DRYRUN} set -x
-        curl -LO ${OH_FW_DOWNLOAD_DIR}/${ohfw%.*}.X/OH_${ohfw}.tar.gz
+        ${DRYRUN} curl -LO ${OH_FW_DOWNLOAD_DIR}/${ohfw%.*}.X/OH_${ohfw}.tar.gz
         ${DEBUG} ${DRYRUN} set +x
         echo "Untar and copy firmware files and xml address table to relevant locations"
         ${DEBUG} ${DRYRUN} set -x
@@ -176,9 +177,9 @@ update_oh_fw() {
         ${DRYRUN} cp -rfp ${tmpcard}/xml/{optohybrid_registers.xml,oh_registers_${ohfw}.xml} ${GEM_ADDRESS_TABLE_ROOT}/
         ${DEBUG} ${DRYRUN} set +x
 
-        update_lmdb
-
         popd
+
+        update_lmdb
     else
         echo "Invalid OptoHybrid firmware version specified (${ohfw})"
         echo "Valid versions usually look like X.Y.Z.C (GE1/1 long)"
@@ -237,6 +238,7 @@ update_ctp7_fw() {
         ${DRYRUN} ln -sf ${uh} ${uhbase}.xml
     done
     popd
+    popd
 
     echo "Download gemloader scripts"
     pushd ${tmpcard}/gemloader
@@ -261,9 +263,8 @@ update_ctp7_fw() {
     ## Update the PC
     ${DRYRUN} cp -rfp ${tmpdir}/address_table_${fwbase}/uhal*.xml ${GEM_ADDRESS_TABLE_ROOT}/
     ${DRYRUN} cp -rfp ${tmpcard}/xml/*.xml ${GEM_ADDRESS_TABLE_ROOT}/
-    update_lmdb
 
-    popd
+    update_lmdb
 
     return 0
 }
@@ -348,6 +349,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     ${DRYRUN} rsync -ach --progress --partial --links ${tmpcard}/{fw,oh_fw,scripts,xml,gemloader,vfat3} \
               root@${ctp7host}:${CARD_GEMDAQ_DIR}/
     ${DEBUG} ${DRYRUN} set +x
+    popd
 
     echo "Upload rpc modules and restart rpcsvc"
     ${DRYRUN} ssh -tq root@${ctp7host} 'killall rpcsvc'
@@ -360,7 +362,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
         usage
     fi
 
-    popd
+    return 0
 }
 
 usage() {
@@ -403,8 +405,6 @@ setup_ctp7() {
     echo "Proceeding..."
 
     create_tmp_card
-
-    echo "Downloading artifacts to ${tmpdir}"
 
     if [ -n "${ohfw}" ]
     then
