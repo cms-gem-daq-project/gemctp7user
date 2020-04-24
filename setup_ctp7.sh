@@ -225,9 +225,10 @@ update_ctp7_fw() {
     ${DRYRUN} curl -LO ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/address_table_${fwbase}.zip
     ${DRYRUN} unzip address_table_${fwbase}.zip
     ${DRYRUN} rm address_table_${fwbase}.zip
-    ${DRYRUN} cp -rfp address_table_${fwbase}/gem_amc_top.xml ${tmpcard}/xml/gem_amc_${fwbase}.xml
+    ${DRYRUN} cp -rfp address_table_${fwbase}/gem_amc_top_new_style.xml ${tmpcard}/xml/gem_amc_${fwbase}.xml
     ${DRYRUN} ln -sf gem_amc_${fwbase}.xml ${tmpcard}/xml/gem_amc_v${ctp7fw//./_}.xml
     ${DRYRUN} ln -sf gem_amc_v${ctp7fw//./_}.xml ${tmpcard}/xml/gem_amc_top.xml
+    ${DRYRUN} ln -sf gem_amc_top.xml ${tmpcard}/xml/amc_address_table_top.xml
     ${DEBUG} ${DRYRUN} set +x
 
     pushd address_table_${fwbase}
