@@ -1,31 +1,389 @@
 #!/bin/sh
 
-usage() {
+set -o pipefail
 
-    echo "Usage: $0 [options] <CTP7 hostname>"
-    echo "  Options:"
-    echo "    -o OptoHybrid fw version (version 3.X.Y supported)"
-    echo "    -c CTP7 fw version (version 3.X.Y supported"
-    echo "    -g GE generation, defaults to GE1/1"
-    echo "         options are:"
-    echo "           1 for GE1/1"
-    echo "           2 (alias for 22"
-    echo "           21 for GE2/1 V1 OptoHybrid"
-    echo "           22 for GE2/1 V2 OptoHybrid"
-    echo "           0 for ME0. "
-    echo "    -l Number of OH links supported in the CTP7 fw"
-    echo "    -x XHAL SW release version (optional, if not specified, will select latest)"
-    echo "    -m CTP7 modules SW release version (optional, if not specified, will select latest)"
-    echo "    -a Create the gemuser CTP7 user account"
-    echo "    -u Update CTP7 libs/bins/fw images"
-    echo ""
-    echo "Plese report bugs to"
-    echo "https://github.com/cms-gem-daq-project/gemctp7user"
+DRYRUN=
+DEBUG=:
 
-    kill -INT $$
+### Globals
+declare KEEP_ARTIFACTS=
+declare CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
+
+## If not set in the calling shell, use the default
+## Path to local storage of bitfiles and xml files for each FW version
+## Useful?
+echo ${GEM_FW_DIR:=/opt/gemdaq/fw}
+
+## If not set in the calling shell, use the default
+echo ${GEM_ADDRESS_TABLE_ROOT:=/opt/cmsgemos/etc/maps}
+
+## If not set in the calling shell, use the default
+echo ${XHAL_ROOT:=/opt/xhal}
+
+## Create a local temp structure for the artifacts
+tmpdir=$(mktemp -d /tmp/tmp.XXXXXX)
+
+## Create a local tree to mimic the card tree structure
+tmpcard=${tmpdir}${CARD_GEMDAQ_DIR}
+mkdir -p ${tmpcard}/{fw,oh_fw,scripts,xml,gemloader,vfat3}
+
+cleanup() {
+
+    if ! [ -n "${KEEP_ARTIFACTS}" ]
+    then
+        echo "Cleaning up ${tmpdir}"
+        rm -rf ${tmpdir}
+    else
+        echo "Not removing ${tmpdir}, make sure to clean up after yourself!"
+    fi
+
 }
 
-while getopts "ac:g:l:o:x:uh" opts
+trap cleanup EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
+
+update_lmdb() {
+
+    echo "Update LMDB address table on the CTP7, make a new .pickle file and resync xml folder"
+    pushd ${tmpcard}/xml
+
+    ${DEBUG} ${DRYRUN} set -x
+    ${DRYRUN} rm -rf ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle
+    ${DRYRUN} python ${XHAL_ROOT}/bin/gem_reg.py -n ${ctp7host} \
+           -e update_lmdb ${CARD_GEMDAQ_DIR}/xml/gem_amc_top.xml
+    ${DRYRUN} cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
+    ${DRYRUN} ln -sf gem_amc_v${ctp7fw//./_}.pickle gem_amc_top.pickle
+    ${DEBUG} ${DRYRUN} set +x
+
+    ## Partially update card
+    ${DRYRUN} rsync -ach --progress --partial --links ${tmpcard}/xml root@${ctp7host}:${CARD_GEMDAQ_DIR}/
+
+    echo "New pickle file has been copied to the CTP7, make sure you modify it correctly"
+
+    popd
+
+    return 0
+}
+
+usage() {
+    cat <<EOF
+Usage: $0 [options] <CTP7 hostname>
+  Options:
+    -o Update OptoHybrid FW to specified version (version 3.X.Y supported)
+    -c Update CTP7 FW to specified version (version 3.X.Y supported)
+    -g GE generation options are:
+           1 for GE1/1 (default)
+           2 (alias for 22
+           21 for GE2/1 V1 OptoHybrid
+           22 for GE2/1 V2 OptoHybrid
+           0 for ME0.
+    -l Number of OH links supported in the CTP7 FW (optional, if not specified defaults to 12)
+    -a Create the gemuser CTP7 user account
+    -u Update CTP7 libs/bins/fw images
+    -k Keep downloaded artifacts
+    -n Do a dry run (don't execute any commands)
+    -d Increase debugging information
+    -x XHAL SW release version (optional, if not specified, will select latest)
+    -m CTP7 modules SW release version (optional, if not specified, will select latest)
+
+Plese report bugs to
+  https://github.com/cms-gem-daq-project/gemctp7user
+EOF
+
+    # kill -INT $$
+    exit 1
+}
+
+setup_ctp7() {
+
+    if ! ping -q -c 1 ${ctp7host}
+    then
+        echo "Unable to ping host ${ctp7host}"
+        usage
+    fi
+
+    echo "Proceeding..."
+    echo "Downloading artifacts to ${tmpdir}"
+
+    # create local links if requested
+    if [ -n "${ohfw}" ]
+    then
+        OH_FW_DOWNLOAD_DIR=https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download
+        echo "Creating links for OH firmware version: ${ohfw}"
+        ohfwre='^[3]\.[0-9]+\.[0-9]+\.(1C|C|2A)$'
+        if [[ "${ohfw}" =~ ${ohfwre} ]]
+        then
+            echo "Downloading V3 firmware with tag ${ohfw}"
+
+            pushd ${tmpdir}
+
+            ${DEBUG} ${DRYRUN} set -x
+            curl -LO ${OH_FW_DOWNLOAD_DIR}/${ohfw%.*}.X/OH_${ohfw}.tar.gz
+            ${DEBUG} ${DRYRUN} set +x
+            echo "Untar and copy firmware files and xml address table to relevant locations"
+            ${DEBUG} ${DRYRUN} set -x
+            ${DRYRUN} tar xvf OH_${ohfw}.tar.gz
+            ${DRYRUN} cp -rfp OH_${ohfw}/OH_${ohfw//_/-}.bit ${tmpcard}/oh_fw/optohybrid_${ohfw}.bit
+            ${DRYRUN} cp -rfp OH_${ohfw}/oh_registers_${ohfw}.xml ${tmpcard}/xml/oh_registers_${ohfw}.xml
+            ${DRYRUN} ln -sf optohybrid_${ohfw}.bit ${tmpcard}/oh_fw/optohybrid_top.bit
+            ${DRYRUN} ln -sf oh_registers_${ohfw}.xml ${tmpcard}/xml/optohybrid_registers.xml
+            ${DRYRUN} rm -rf OH_${ohfw}*
+
+            ## Update the card
+            ${DRYRUN} rsync -ach --progress --partial --links ${tmpcard}/{oh_fw,xml} \
+                      root@${ctp7host}:${CARD_GEMDAQ_DIR}/
+
+            ## Update the PC
+            ${DRYRUN} cp -rfp ${tmpcard}/xml/{optohybrid_registers.xml,oh_registers_${ohfw}.xml} ${GEM_ADDRESS_TABLE_ROOT}/
+            update_lmdb
+
+            ${DEBUG} ${DRYRUN} set +x
+
+            popd
+        else
+            echo "Invalid OptoHybrid firmware version specified (${ohfw})"
+            echo "Valid versions usually look like X.Y.Z.C (GE1/1 long)"
+            echo " or X.Y.Z.1C (GE1/1 short)"
+            echo " or X.Y.Z.2A (GE2/1)"
+            usage
+        fi
+    fi
+
+    if [ -n "${ge_gen}" ]
+    then
+        genre='^([01]|(2[12]?))$'
+        if ! [[ "${ge_gen}" =~ ${genre} ]]
+        then
+            echo "Invalid GEM generation specified ${ge_gen}"
+            usage
+        fi
+        if [[ ${ge_gen} = "21" ]]
+        then
+            echo "Using GE2/1 OHv1"
+            gesuf="ge21v1_"
+        elif [[ ${ge_gen} =~ "2" ]]
+        then
+            echo "Using GE2/1 OHv2"
+            gesuf="ge21v2_"
+        elif [[ ${ge_gen} = "0" ]]
+        then
+            echo "Using ME0 OH"
+            gesuf="me0_"
+        else
+            echo "Using GE1/1 OH"
+            gesuf="ge11_"
+        fi
+    else
+        echo "Using GE1/1 OH (default)"
+        gesuf="ge11_"
+    fi
+
+    if ! [ -n "${nlinks}" ]
+    then
+        echo "Assuming nlinks=12"
+        nlinks=12
+    fi
+
+    if [ -n "${ctp7fw}" ]
+    then
+        AMC_FW_DOWNLOAD_DIR=https://github.com/cms-gem-daq-project/GEM_AMC/releases/download
+        AMC_FW_RAW_DIR=https://raw.githubusercontent.com/cms-gem-daq-project/GEM_AMC
+
+        ctp7fwre='^[3]\.[0-9]+\.[0-9]+$'
+        if ! [[ ${ctp7fw} =~ ${ctp7fwre} ]]
+        then
+            echo "Unsupported CTP7 FW version (${ctp7fw})"
+            usage
+        fi
+
+        fwbase="v${ctp7fw//./_}_${gesuf}${nlinks}oh"
+        fwfile="gem_ctp7_${fwbase}.bit"
+
+        pushd ${tmpcard}/fw
+        if [ ! -f "${fwfile}" ]
+        then
+            echo "CTP7 firmware fw/${fwfile} missing, downloading"
+            ${DEBUG} ${DRYRUN} set -x
+            ${DRYRUN} curl -LO ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/${fwfile}
+            ${DEBUG} ${DRYRUN} set +x
+        fi
+        ${DEBUG} ${DRYRUN} set -x
+        ${DRYRUN} ln -sf ${fwfile} gem_ctp7.bit
+        ${DEBUG} ${DRYRUN} set +x
+        popd
+
+        pushd ${tmpdir}
+
+        ${DEBUG} ${DRYRUN} set -x
+        ${DRYRUN} curl -LO ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/address_table_${fwbase}.zip
+        ${DRYRUN} unzip address_table_${fwbase}.zip
+        ${DRYRUN} rm address_table_${fwbase}.zip
+        ${DRYRUN} cp -rfp address_table_${fwbase}/gem_amc_top.xml ${tmpcard}/xml/gem_amc_${fwbase}.xml
+        ${DRYRUN} ln -sf gem_amc_${fwbase}.xml ${tmpcard}/xml/gem_amc_v${ctp7fw//./_}.xml
+        ${DEBUG} ${DRYRUN} set +x
+
+        pushd address_table_${fwbase}
+        ${DRYRUN} rename .xml _${fwbase}.xml uhal*.xml
+        for uh in $( ls uhal*.xml )
+        do
+            uhbase=${uh%%_v*}
+            ${DRYRUN} ln -sf ${uh} ${uhbase}.xml
+        done
+        popd
+
+        ${DEBUG} ${DRYRUN} set -x
+        ${DRYRUN} ln -sf gem_amc_v${ctp7fw//./_}.xml ${tmpcard}/xml/gem_amc_top.xml
+        ${DEBUG} ${DRYRUN} set +x
+        popd
+
+        echo "Download gemloader"
+        pushd ${tmpcard}/gemloader
+        declare -a gemloaderArray=(
+            "gemloader_clear_header.sh"
+            "gemloader_configure.sh"
+            "gemloader_load_test_data.sh"
+            "gemloader_read.sh"
+        )
+        for gemloaderFile in "${gemloaderArray[@]}"
+        do
+            ${DEBUG} ${DRYRUN} set -x
+            ${DRYRUN} curl -LO ${AMC_FW_RAW_DIR}/v${ctp7fw}/scripts/gemloader/${gemloaderFile}
+            ${DEBUG} ${DRYRUN} set +x
+        done
+
+        ## Update the card
+        ${DRYRUN} rsync -ach --progress --partial --links ${tmpcard}/{fw,gemloader,xml} \
+                  root@${ctp7host}:${CARD_GEMDAQ_DIR}/
+
+        ## Update the PC
+        ${DRYRUN} cp -rfp ${tmpdir}/address_table_${fwbase}/uhal*.xml ${GEM_ADDRESS_TABLE_ROOT}/
+        ${DRYRUN} cp -rfp ${tmpcard}/xml/*.xml ${GEM_ADDRESS_TABLE_ROOT}/
+        update_lmdb
+
+        popd
+    fi
+
+    # create new CTP7 user if requested and gemuser doesn't exist
+    if [ -n "${gemuser}" ]
+    then
+        if ! ssh -tq root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
+        then
+            while true
+            do
+                read -u 3 -r -n 1 -p "Create CTP7 user account: gemuser (y|n) : " create
+                case $create in
+                    [yY]* )
+                        ${DEBUG} ${DRYRUN} set -x
+                        ${DRYRUN} ssh -tq root@${ctp7host} '/usr/sbin/adduser gemuser -h /mnt/persistent/gemuser && /bin/save_passwd'
+                        ${DRYRUN} ssh -tq gemuser@${ctp7host} 'mkdir -p ~/logs'
+                        ${DRYRUN} rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc gemuser@${ctp7host}:~/
+                        ${DEBUG} ${DRYRUN} set +x
+                        break;;
+                    [nN]* ) break;;
+                    * )
+                        echo
+                        echo "Enter y or n (case insensitive)";;
+                esac
+            done 3<&0
+        else
+            echo "CTP7 user gemuser already exists"
+        fi
+    fi
+
+    # Update CTP7 gemdaq paths
+    GEMDAQ_DOWNLOAD_URL=https://cern.ch/cmsgemdaq/sw/gemos/repos/releases/legacy/base/tarballs
+    if [ -n "${update}" ]
+    then
+        echo "Creating/updating CTP7 gemdaq directory structure"
+        ${DEBUG} ${DRYRUN} set -x
+        ${DRYRUN} ssh -tq root@${ctp7host} "echo Setting up ${CARD_GEMDAQ_DIR} && \
+mkdir -p ${CARD_GEMDAQ_DIR} && \
+mkdir -p ${CARD_GEMDAQ_DIR}/address_table.mdb && \
+touch ${CARD_GEMDAQ_DIR}/address_table.mdb/data.mdb && \
+touch ${CARD_GEMDAQ_DIR}/address_table.mdb/lock.mdb && \
+chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
+        ${DEBUG} ${DRYRUN} set +x
+
+        pushd scripts
+        gesuf=${gesuf%*_}
+        gesuf=${gesuf%%v*}
+        ${DRYRUN} cp -rfp ${gesuf}/*.sh .
+        popd
+
+        ${DRYRUN} cp -rfp -t ${tmpcard} bin lib scripts
+        ${DRYRUN}
+        rm -rf ${tmpcard}/scripts/{ge11,ge21,me0}
+
+        ${DRYRUN} find ${tmpcard} -type d -print0 -exec chmod a+rx {} \+ > /dev/null
+        ${DRYRUN} find ${tmpcard} -type f -print0 -exec chmod a+r  {} \+ > /dev/null
+        ${DRYRUN} find ${tmpcard}/bin -type f -print0 -exec chmod a+rx {} \+ > /dev/null
+        ${DRYRUN} find ${tmpcard}/lib -type f -print0 -exec chmod a+rx {} \+ > /dev/null
+
+        pushd ${tmpdir}
+
+        ## Take latest versions
+        tarballs=(
+            ctp7-base.tgz     ## ipbus, liblmdb.so
+            reedmuller.tgz    ## libreedmuller.so, rmencode, rmdecode
+            rwreg.tgz         ## librwreg.so
+            reg_interface.tgz ## reg_interface
+            xhal.tgz          ## libxhal.so, reg_interface_gem
+            ctp7_modules-${gesuf%%_*}.tgz
+        )
+
+        ${DEBUG} ${DRYRUN} set -x
+        for tb in ${tarballs[@]}
+        do
+            if [[ "${tb}" =~ xhal ]]
+            then
+                ## Override if a specific version is specified
+                if [ -n "${xhaltag}" ]
+                then
+                    ${DRYRUN} curl -L ${GEMDAQ_DOWNLOAD_URL}/xhal/xhal-${xhaltag}.tgz -o xhal.tgz
+                else
+                    ${DRYRUN} curl -LO ${GEMDAQ_DOWNLOAD_URL}/${tb%%.tgz*}/${tb}
+                fi
+            elif [[ "${tb}" =~ modules ]]
+            then
+                if [ -n "${ctp7modtag}" ]
+                then
+                    ${DRYRUN} curl -L ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules/ctp7_modules-${ctp7modtag}-${gesuf%%_*}.tgz -o ctp7_modules-${gesuf%%_*}.tgz
+                else
+                    ${DRYRUN} curl -LO ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules/${tb}
+                fi
+            else
+                ${DRYRUN} curl -LO ${GEMDAQ_DOWNLOAD_URL}/${tb%%.tgz*}/${tb}
+            fi
+            ${DRYRUN} tar xzf ${tb}
+            ${DRYRUN} rm -rf ${tb}
+        done
+
+        ${DEBUG} ${DRYRUN} set +x
+
+        ## Obsolete?
+        ${DEBUG} ${DRYRUN} set -x
+        mkdir -p ${tmpcard}/vfat3
+        ${DRYRUN} curl -L https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/release/legacy-1.1/conf/conf.txt \
+                  -o ${tmpcard}/vfat3/conf.txt
+        ${DRYRUN} rsync -ach --progress --partial --links mnt root@${ctp7host}:/
+        ${DRYRUN} rsync -ach --progress --partial --links ${tmpcard}/{fw,oh_fw,scripts,xml,gemloader,vfat3} \
+                  root@${ctp7host}:${CARD_GEMDAQ_DIR}/
+        ${DEBUG} ${DRYRUN} set +x
+
+        echo "Upload rpc modules and restart rpcsvc"
+        ${DRYRUN} ssh -tq root@${ctp7host} 'killall rpcsvc'
+        if ssh -tq root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
+        then
+            ${DRYRUN} ssh -tq gemuser@${ctp7host} 'rpcsvc'
+        else
+            echo "CTP7 gemuser account does not exist on ${ctp7host}"
+            usage
+        fi
+
+        popd
+    fi
+}
+
+while getopts "ac:g:l:o:x:ukdnh" opts
 do
     case $opts in
         c)
@@ -44,6 +402,12 @@ do
             xhaltag="$OPTARG";;
         m)
             ctp7modtag="$OPTARG";;
+        k)
+            KEEP_ARTIFACTS="1";;
+        d)
+            DEBUG= ;;
+        n)
+            DRYRUN=echo;;
         h)
             usage;;
         \?)
@@ -57,294 +421,4 @@ shift $((OPTIND-1))
 
 ctp7host=${1}
 
-ping -q -c 1 ${ctp7host} >& /dev/null
-
-if [ "$?" != "0" ]
-then
-    echo "Unable to ping host ${ctp7host}"
-    usage
-fi
-
-CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
-GEM_FW_DIR=/opt/gemdaq/fw
-GEM_ADDRESS_TABLE_ROOT=/opt/cmsgemos/etc/maps
-XHAL_ROOT=/opt/xhal
-
-echo "Proceeding..."
-# create local links if requested
-if [ -n "${ohfw}" ]
-then
-    OH_FW_DOWNLOAD_DIR=https://github.com/cms-gem-daq-project/OptoHybridv3/releases/download
-    echo "Creating links for OH firmware version: ${ohfw}"
-    ohfwre='^[3]\.[0-9]+\.[0-9]+\.(1C|C|2A)$'
-    if [[ ${ohfw} =~ ${ohfwre} ]]
-    then
-        echo "Downloading V3 firmware with tag ${ohfw}"
-        set -x
-        curl -L -O ${OH_FW_DOWNLOAD_DIR}/${ohfw%.*}.X/OH_${ohfw}.tar.gz
-        set +x
-        echo "Untar and copy firmware files and xml address table to relevant locations"
-        set -x
-        tar xvf OH_${ohfw}.tar.gz
-        cp -rfp OH_${ohfw}/OH_${ohfw//_/-}.bit oh_fw/optohybrid_${ohfw}.bit
-        cp -rfp OH_${ohfw}/oh_registers_${ohfw}.xml xml/oh_registers_${ohfw}.xml
-        ln -sf optohybrid_${ohfw}.bit oh_fw/optohybrid_top.bit
-        ln -sf oh_registers_${ohfw}.xml xml/optohybrid_registers.xml
-        rm -rf OH_${ohfw}*
-        rsync -ach --progress --partial --links oh_fw xml \
-              root@${ctp7host}:${CARD_GEMDAQ_DIR}/
-        set +x
-    else
-        echo "Invalid OptoHybrid firmware version specified (${ohfw})"
-        echo "Valid versions usually look like X.Y.Z.C (GE1/1 long)"
-        echo " or X.Y.Z.1C (GE1/1 short)"
-        echo " or X.Y.Z.2A (GE2/1)"
-        usage
-    fi
-fi
-
-set -x
-if [ -n "${ge_gen}" ]
-then
-    genre='^([01]|(2[12]?))$'
-    if ! [[ "${ge_gen}" =~ ${genre} ]]
-    then
-        echo "Invalid GEM generation specified ${ge_gen}"
-        usage
-    fi
-    if [[ ${ge_gen} = "21" ]]
-    then
-        echo "Using GE2/1 OHv1"
-        gesuf="ge21v1_"
-    elif [[ ${ge_gen} =~ "2" ]]
-    then
-        echo "Using GE2/1 OHv2"
-        gesuf="ge21v2_"
-    elif [[ ${ge_gen} = "0" ]]
-    then
-        echo "Using ME0 OH"
-        gesuf="me0_"
-    else
-        echo "Using GE1/1 OH"
-        gesuf="ge11_"
-    fi
-else
-    echo "Using GE1/1 OH (default)"
-    gesuf="ge11_"
-fi
-set +x
-
-if ! [ -n "${nlinks}" ]
-then
-    echo "Assuming nlinks=12"
-    nlinks=12
-fi
-
-if [ -n "${ctp7fw}" ]
-then
-    AMC_FW_DOWNLOAD_DIR=https://github.com/cms-gem-daq-project/GEM_AMC/releases/download
-    AMC_FW_RAW_DIR=https://raw.githubusercontent.com/cms-gem-daq-project/GEM_AMC
-
-    ctp7fwre='^[3]\.[0-9]+\.[0-9]+$'
-    if ! [[ ${ctp7fw} =~ ${ctp7fwre} ]]
-    then
-        echo "Unsupported CTP7 FW version (${ctp7fw})"
-        usage
-    fi
-
-    fwbase="v${ctp7fw//./_}_${gesuf}${nlinks}oh"
-    fwfile="gem_ctp7_${fwbase}.bit"
-    pushd fw
-    if [ ! -f "${fwfile}" ]
-    then
-        echo "CTP7 firmware fw/${fwfile} missing, downloading"
-        set -x
-        curl -L -O ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/${fwfile}
-        set +x
-    fi
-    set -x
-    ln -sf ${fwfile} gem_ctp7.bit
-    set +x
-    popd
-
-    pushd xml
-    if [ ! -f "xml/gem_amc_top_${ctp7fw//./_}.xml" ]
-    then
-        echo "CTP7 firmware xml/gem_amc_top_${ctp7fw//./_}.xml missing, downloading"
-        set -x
-        curl -L -O ${AMC_FW_DOWNLOAD_DIR}/v${ctp7fw}/address_table_${fwbase}.zip
-        unzip address_table_${fwbase}.zip
-        rm address_table_${fwbase}.zip
-        cp -rfp address_table_${fwbase}/gem_amc_top.xml gem_amc_${fwbase}.xml
-        ln -sf gem_amc_${fwbase}.xml gem_amc_v${ctp7fw//./_}.xml
-        rm -rf address_table_${fwbase}
-        set +x
-    fi
-
-    set -x
-    ln -sf gem_amc_v${ctp7fw//./_}.xml gem_amc_top.xml
-    set +x
-    popd
-
-    echo "Download gemloader"
-    mkdir -p gemloader
-
-    declare -a gemloaderArray=(
-        "gemloader_clear_header.sh"
-        "gemloader_configure.sh"
-        "gemloader_load_test_data.sh"
-        "gemloader_read.sh"
-    )
-    pushd gemloader
-    for gemloaderFile in "${gemloaderArray[@]}"
-    do
-        set -x
-        curl -L -O ${AMC_FW_RAW_DIR}/v${ctp7fw}/scripts/gemloader/${gemloaderFile}
-        set +x
-    done
-    popd
-
-    rsync -ach --progress --partial --links fw gemloader xml \
-          root@${ctp7host}:${CARD_GEMDAQ_DIR}/
-fi
-
-# create new CTP7 user if requested and gemuser doesn't exist
-if [ -n "${gemuser}" ]
-then
-    ssh -t root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
-    if ! [ "$?" = "0" ]
-    then
-        read -p "Create CTP7 user account: gemuser (y|n) : " create
-        while true
-        do
-            case $create in
-                [yY]* )
-                    set -x
-                    ssh root@${ctp7host} '/usr/sbin/adduser gemuser -h /mnt/persistent/gemuser && /bin/save_passwd'
-                    ssh gemuser@${ctp7host} 'mkdir -p ~/logs'
-                    rsync -aXch --progress --partial --links .profile .bashrc .vimrc .inputrc gemuser@${ctp7host}:~/
-                    set +x
-                    break;;
-                [nN]* )
-                    break;;
-                * )
-                    echo "Enter y or n (case insensitive)";;
-            esac
-        done
-    else
-        echo "CTP7 user gemuser already exists"
-    fi
-fi
-
-# Update CTP7 gemdaq paths
-GEMDAQ_DOWNLOAD_URL=https://cern.ch/cmsgemdaq/sw/gemos/repos/releases/legacy/base/tarballs
-if [ -n "${update}" ]
-then
-    echo "Creating/updating CTP7 gemdaq directory structure"
-    set -x
-    ssh root@${ctp7host} "echo Setting up  ${CARD_GEMDAQ_DIR} && \
-mkdir -p ${CARD_GEMDAQ_DIR} && \
-mkdir -p ${CARD_GEMDAQ_DIR}/address_table.mdb && \
-touch ${CARD_GEMDAQ_DIR}/address_table.mdb/data.mdb && \
-touch ${CARD_GEMDAQ_DIR}/address_table.mdb/lock.mdb && \
-chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
-    set +x
-
-    mkdir -p ${ctp7host}
-    pushd scripts
-    gesuf=${gesuf%*_}
-    gesuf=${gesuf%%v*}
-    cp -rfp ${gesuf}/*.sh .
-    popd
-
-    cp -rfp -t ${ctp7host} bin lib fw oh_fw gemloader scripts xml
-
-    pushd ${ctp7host}
-    find . -type d -print0 -exec chmod a+rx {} \+
-    find . -type f -print0 -exec chmod a+r  {} \+
-    find bin -type f -print0 -exec chmod a+rx {} \+
-    find lib -type f -print0 -exec chmod a+rx {} \+
-
-    ## Take latest versions
-    tarballs=(
-        ctp7-base.tgz     ## ipbus, liblmdb.so
-        reedmuller.tgz    ## libreedmuller.so, rmencode, rmdecode
-        rwreg.tgz         ## librwreg.so
-        reg_interface.tgz ## reg_interface
-        xhal.tgz          ## libxhal.so, reg_interface_gem
-        # ctp7_modules_${gesuf}.tgz  ## ctp7 RPC modules FIXME
-        ctp7_modules.tgz  ## ctp7 RPC modules
-    )
-    set -x
-    for tb in ${tarballs[@]}
-    do
-        curl -L -O ${GEMDAQ_DOWNLOAD_URL}/${tb}
-        tar xzf ${tb}
-        rm -rf ${tb}
-    done
-
-    ## Override if a specific version is specified
-    if [ -n "${xhaltag}" ]
-    then
-        curl -L ${GEMDAQ_DOWNLOAD_URL}/xhal-${xhaltag}.tgz -o xhal.tgz
-        tar xzf xhal.tgz
-        rm -rf xhal.zip
-    fi
-
-    if [ -n "${ctp7modtag}" ]
-    then
-        # curl -L ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules-${ctp7modtag}_${gesuf}.tgz -o ctp7_modules.tgz ## FIXME
-        curl -L ${GEMDAQ_DOWNLOAD_URL}/ctp7_modules-${ctp7modtag}.tgz -o ctp7_modules.tgz
-        tar xzf ctp7_modules.tgz
-        rm -rf ctp7_modules.tgz
-    fi
-    set +x
-
-    ## Obsolete?
-    set -x
-    mkdir -p vfat3
-    curl -L https://raw.githubusercontent.com/cms-gem-daq-project/ctp7_modules/release/legacy-1.1/conf/conf.txt \
-         -o vfat3/conf.txt
-    rsync -ach --progress --partial --links mnt root@${ctp7host}:/
-    rsync -ach --progress --partial --links fw oh_fw scripts xml gemloader vfat3 \
-         root@${ctp7host}:${CARD_GEMDAQ_DIR}/
-    set +x
-
-    echo "Update LMDB address table on the CTP7, make a new .pickle file and resync xml folder"
-    set -x
-    echo cp -rfp xml/* ${GEM_ADDRESS_TABLE_ROOT}/
-    set +x
-
-    echo "Upload rpc modules and restart rpcsvc"
-    ssh root@${ctp7host} 'killall rpcsvc'
-    ssh -t root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
-    if [ "$?" = "0" ]
-    then
-        ssh -t gemuser@${ctp7host} 'rpcsvc'
-    else
-        echo "CTP7 gemuser account does not exist on ${ctp7host}"
-        usage
-    fi
-
-    pushd xml
-    set -x
-    python ${XHAL_ROOT}/bin/gem_reg.py -n ${ctp7host} \
-           -e update_lmdb ${CARD_GEMDAQ_DIR}/xml/gem_amc_top.xml
-    cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
-    ln -sf gem_amc_v${ctp7fw//./_}.pickle gem_amc_top.pickle
-    set +x
-    popd
-    rsync -ach --progress --partial --links xml root@${ctp7host}:${CARD_GEMDAQ_DIR}/
-
-    echo "Cleaning local temp folders"
-    popd
-    echo rm ${ctp7host}
-    echo rm ./bin/*
-    echo rm ./vfat3/*
-    echo rm ./lib/*
-    echo rm ./fw/*
-    echo rm ./oh_fw/*
-    echo rm ./xml/*
-    echo rm -rf ./mnt
-    echo rm -rf ./gemloader
-fi
+(setup_ctp7)
