@@ -178,8 +178,6 @@ update_oh_fw() {
         ${DEBUG} ${DRYRUN} set +x
 
         popd
-
-        update_lmdb
     else
         echo "Invalid OptoHybrid firmware version specified (${ohfw})"
         echo "Valid versions usually look like X.Y.Z.C (GE1/1 long)"
@@ -264,8 +262,6 @@ update_ctp7_fw() {
     ## Update the PC
     ${DRYRUN} cp -rfp ${tmpdir}/address_table_${fwbase}/uhal*.xml ${GEM_ADDRESS_TABLE_ROOT}/
     ${DRYRUN} cp -rfp ${tmpcard}/xml/*.xml ${GEM_ADDRESS_TABLE_ROOT}/
-
-    update_lmdb
 
     return 0
 }
@@ -357,7 +353,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
 
     if check_gemuser
     then
-        ${DRYRUN} ssh -tq gemuser@${ctp7host} 'rpcsvc'
+        ${DRYRUN} ssh -tq gemuser@${ctp7host} sh -lic 'rpcsvc'
     else
         echo "CTP7 gemuser account does not exist on ${ctp7host}"
         usage
@@ -424,6 +420,12 @@ setup_ctp7() {
     then
         update_ctp7_fw "${ctp7fw}"
     fi
+
+    if [ -n "${ctp7fw}" ] ||  [ -n "${ohfw}" ]
+    then
+        update_lmdb
+    fi
+
 
     if [ -n "${gemuser}" ]
     then
