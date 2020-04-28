@@ -62,6 +62,7 @@ update_lmdb() {
     ${DRYRUN} python ${XHAL_ROOT}/bin/gem_reg.py -n ${ctp7host} \
            -e update_lmdb ${CARD_GEMDAQ_DIR}/xml/gem_amc_top.xml
     ${DRYRUN} cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
+    ${DRYRUN} perl -pi -e 's|creg_utils.reg_interface.common.reg_xml_parser|crw_reg|g' gem_amc_top_v${ctp7fw//./_}.pickle
     ${DRYRUN} ln -sf gem_amc_v${ctp7fw//./_}.pickle gem_amc_top.pickle
     ${DEBUG} ${DRYRUN} set +x
 
