@@ -11,7 +11,7 @@ declare CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
 echo ${GEM_FW_DIR:=/opt/gemdaq/fw}
 
 ## If not set in the calling shell, use the default
-echo ${GEM_ADDRESS_TABLE_ROOT:=/opt/cmsgemos/etc/maps}
+echo ${GEM_ADDRESS_TABLE_PATH:=/opt/cmsgemos/etc/maps}
 
 ## If not set in the calling shell, use the default
 echo ${XHAL_ROOT:=/opt/xhal}
@@ -58,10 +58,10 @@ update_lmdb() {
     pushd ${tmpcard}/xml
 
     ${DEBUG} ${DRYRUN} set -x
-    ${DRYRUN} rm -rf ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle
+    ${DRYRUN} rm -rf ${GEM_ADDRESS_TABLE_PATH}/amc_address_table_top.pickle
     ${DRYRUN} python ${XHAL_ROOT}/bin/gem_reg.py -n ${ctp7host} \
            -e update_lmdb ${CARD_GEMDAQ_DIR}/xml/gem_amc_top.xml
-    ${DRYRUN} cp -rfp ${GEM_ADDRESS_TABLE_ROOT}/amc_address_table_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
+    ${DRYRUN} cp -rfp ${GEM_ADDRESS_TABLE_PATH}/amc_address_table_top.pickle gem_amc_top_v${ctp7fw//./_}.pickle
     ${DRYRUN} perl -pi -e 's|creg_utils.reg_interface.common.reg_xml_parser|crw_reg|g' gem_amc_top_v${ctp7fw//./_}.pickle
     ${DRYRUN} ln -sf gem_amc_v${ctp7fw//./_}.pickle gem_amc_top.pickle
     ${DEBUG} ${DRYRUN} set +x
@@ -175,7 +175,7 @@ update_oh_fw() {
                   root@${ctp7host}:${CARD_GEMDAQ_DIR}/
 
         ## Update the PC
-        ${DRYRUN} cp -rfp ${tmpcard}/xml/{optohybrid_registers.xml,oh_registers_${ohfw}.xml} ${GEM_ADDRESS_TABLE_ROOT}/
+        ${DRYRUN} cp -rfp ${tmpcard}/xml/{optohybrid_registers.xml,oh_registers_${ohfw}.xml} ${GEM_ADDRESS_TABLE_PATH}/
         ${DEBUG} ${DRYRUN} set +x
 
         popd
@@ -261,8 +261,8 @@ update_ctp7_fw() {
               root@${ctp7host}:${CARD_GEMDAQ_DIR}/
 
     ## Update the PC
-    ${DRYRUN} cp -rfp ${tmpdir}/address_table_${fwbase}/uhal*.xml ${GEM_ADDRESS_TABLE_ROOT}/
-    ${DRYRUN} cp -rfp ${tmpcard}/xml/*.xml ${GEM_ADDRESS_TABLE_ROOT}/
+    ${DRYRUN} cp -rfp ${tmpdir}/address_table_${fwbase}/uhal*.xml ${GEM_ADDRESS_TABLE_PATH}/
+    ${DRYRUN} cp -rfp ${tmpcard}/xml/*.xml ${GEM_ADDRESS_TABLE_PATH}/
 
     return 0
 }
