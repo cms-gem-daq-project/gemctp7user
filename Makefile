@@ -55,3 +55,13 @@ cleanrpm:
 
 .PHONY: rpm
 rpm: spec_update makerpm
+
+.PHONY: doc cleandoc
+doc:
+	$(MAKE) -C $@ docs
+
+cleandoc:
+	$(MAKE) -C doc cleanall
+
+.PHONY: clean
+clean: cleandoc cleanrpm

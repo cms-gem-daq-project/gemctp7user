@@ -6,7 +6,12 @@
 
 # Don't ignore git settings
 !*.gitignore
+!*.gitmodules
 
 # Don't ignore source files, etc
+!Makefile
 !*.py
 !*.sh
+
+# Ignore junk files
+*#*
