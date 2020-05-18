@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -o pipefail
+
 ## @file setup_ctp7.sh
 ## @author CMS GEM DAQ Project <gemdaq@cern.ch>
 ## @copyright MIT
@@ -9,7 +11,57 @@
 ## @par Usage
 ## See setup_ctp7.sh -h
 
-set -o pipefail
+## @fn cleanup_ctp7()
+## @brief Remove all temporary artifacts created during execution
+## @details Called in @c trap on
+##
+## @li @c EXIT
+## @li @c SIGQUIT
+## @li @c SIGINT
+## @li @c SIGTERM
+## @li @c SIGSEGV
+cleanup_ctp7() {
+
+    if ! [ -n "${KEEP_ARTIFACTS}" ] && [ -n "${tmpdir}" ]
+    then
+        echo "Cleaning up ${tmpdir}"
+        rm -rf ${tmpdir}
+    else
+        echo "Not removing ${tmpdir}, make sure to clean up after yourself!"
+    fi
+
+}
+
+trap cleanup_ctp7 EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
+
+usage() {
+    cat <<EOF
+Usage: $0 [options] <CTP7 hostname>
+  Options:
+    -o Update OptoHybrid FW to specified version (version 3.X.Y supported)
+    -c Update CTP7 FW to specified version (version 3.X.Y supported)
+    -g GEM station/generation options are:
+           1 for GE1/1 (default)
+           2 (alias for 22
+           21 for GE2/1 V1 OptoHybrid
+           22 for GE2/1 V2 OptoHybrid
+           0 for ME0
+    -l Number of OH links supported in the CTP7 FW (optional, if not specified defaults to 12)
+    -a Create the gemuser CTP7 user account
+    -u Update CTP7 libs/bins/fw images
+    -k Keep downloaded artifacts
+    -n Do a dry run (don't execute any commands)
+    -d Increase debugging information
+    -x XHAL SW release version (optional, if not specified, will select latest)
+    -m CTP7 modules SW release version (optional, if not specified, will select latest)
+
+Plese report bugs to
+  https://github.com/cms-gem-daq-project/gemctp7user
+EOF
+
+    # kill -INT $$
+    exit 1
+}
 
 ### Globals
 ## @var CARD_GEMDAQ_DIR
@@ -70,29 +122,6 @@ create_tmp_card() {
 
     return 0
 }
-
-## @fn cleanup_ctp7()
-## @brief Remove all temporary artifacts created during execution
-## @details Called in @c trap on
-##
-## @li @c EXIT
-## @li @c SIGQUIT
-## @li @c SIGINT
-## @li @c SIGTERM
-## @li @c SIGSEGV
-cleanup_ctp7() {
-
-    if ! [ -n "${KEEP_ARTIFACTS}" ] && [ -n "${tmpdir}" ]
-    then
-        echo "Cleaning up ${tmpdir}"
-        rm -rf ${tmpdir}
-    else
-        echo "Not removing ${tmpdir}, make sure to clean up after yourself!"
-    fi
-
-}
-
-trap cleanup_ctp7 EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
 
 ## @fn update_lmdb()
 ## @brief Updates the LMDB on the CTP7 following update of FW
@@ -457,35 +486,6 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
     fi
 
     return 0
-}
-
-usage() {
-    cat <<EOF
-Usage: $0 [options] <CTP7 hostname>
-  Options:
-    -o Update OptoHybrid FW to specified version (version 3.X.Y supported)
-    -c Update CTP7 FW to specified version (version 3.X.Y supported)
-    -g GEM station/generation options are:
-           1 for GE1/1 (default)
-           2 (alias for 22
-           21 for GE2/1 V1 OptoHybrid
-           22 for GE2/1 V2 OptoHybrid
-           0 for ME0
-    -l Number of OH links supported in the CTP7 FW (optional, if not specified defaults to 12)
-    -a Create the gemuser CTP7 user account
-    -u Update CTP7 libs/bins/fw images
-    -k Keep downloaded artifacts
-    -n Do a dry run (don't execute any commands)
-    -d Increase debugging information
-    -x XHAL SW release version (optional, if not specified, will select latest)
-    -m CTP7 modules SW release version (optional, if not specified, will select latest)
-
-Plese report bugs to
-  https://github.com/cms-gem-daq-project/gemctp7user
-EOF
-
-    # kill -INT $$
-    exit 1
 }
 
 ## @fn setup_ctp7()
