@@ -15,7 +15,7 @@ export GEM_DOCS_URL?=$(EOS_SITE_URL)
 
 ENV_NAME?=docs
 CONDA_ENV_FILE?=/etc/profile.d/conda.sh
-CONDA_DIR=/tmp/$(USER)/conda
+CONDA_DIR?=/tmp/$(USER)/conda
 CONDA_RUN=conda run -n $(ENV_NAME)
 ifdef USE_CONDA
 CONDA_EXE=. $(CONDA_ENV_FILE) && $(CONDA_RUN)
