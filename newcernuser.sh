@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.8
 ## @brief Script to add NICE users to a GEM DAQ managed machine

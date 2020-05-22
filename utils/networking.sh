@@ -1,14 +1,17 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
-## @brief Functions to wrap setup of GEM DAQ network interfaces
+## @brief Functions to wrap setup of GEM DAQ network interfaces.
 
 . utils/helpers.sh
 
+
 ## @defgroup Networking Network Setup Utilities
+## @brief Utilities to mange setup of network devices and connections.
+## @details
 
 ## @fn configure_interface()
 ## @brief Configure a network interface for the uTCA or uFEDKIT
@@ -192,6 +195,16 @@ EOF
 
 ## @defgroup DeviceDrivers Device Driver Utilities
 
+## @var mlnxversions
+## @brief Array containing known versions of the Mellanox driver
+## @ingroup DeviceDrivers
+declare -ra mlnxversions=( '5.0-1.0.0.0' '4.7-3.2.9.0' '4.7-1.0.0.1' '4.6-1.0.1.1' '4.5-1.0.1.0' '4.4-2.0.7.0' '4.4-1.0.1.0' '4.3-3.0.2.1' '4.3-1.0.1.0' '4.2-1.0.1.0' )
+
+## @var mlnxverre
+## @brief Regex matching known versions of the Mellanox driver
+## @ingroup DeviceDrivers
+declare -r mlnxverre='^'$(IFS=\|;echo "${mlnxversions[*]}")'$'
+
 ## @fn install_mellanox_driver()
 ## @brief Install drivers for the Mellanox 10GbE NIC used with the uFEDKIT
 ## @ingroup DeviceDrivers
@@ -204,13 +217,6 @@ install_mellanox_driver() {
         return 1
     fi
 
-    ## @var mlnxversions
-    ## @brief Array containing known versions of the Mellanox driver
-    declare -ra mlnxversions=( '5.0-1.0.0.0' '4.7-3.2.9.0' '4.7-1.0.0.1' '4.6-1.0.1.1' '4.5-1.0.1.0' '4.4-2.0.7.0' '4.4-1.0.1.0' '4.3-3.0.2.1' '4.3-1.0.1.0' '4.2-1.0.1.0' )
-
-    ## @var mlnxverre
-    ## @brief Regex matching known versions of the Mellanox driver
-    local -r mlnxverre='^'$(IFS=\|;echo "${mlnxversions[*]}")'$'
     local -r crel=$(cat /etc/system-release)
     local -r ncrel=${crel//[!0-9.]/}
     local -r sncrel=${ncrel%${ncrel:3}}

@@ -1,14 +1,17 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Functions to facilitate adding developer tools to GEM DAQ machines
 
 . utils/helpers.sh
 
+
 ## @defgroup DevTools Developer Tool Utilities
+## @brief Utilities to mange installation of various developer tools
+## @details
 
 ## @fn install_devtools()
 ## @brief Propmt to install devtoolset groups

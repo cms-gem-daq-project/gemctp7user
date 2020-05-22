@@ -1,14 +1,17 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Functions to wrap installation of extra tooling
 
 . utils/helpers.sh
 
+
 ## @defgroup Extras Extra Tooling Utilities
+## @brief Utilities to mange installation of various extra packages
+## @details
 
 ## @fn install_root()
 ## @brief Install ROOT from the standard repository

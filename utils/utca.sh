@@ -1,20 +1,23 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Functions to facilitate setup of uTCA infrastructure
 
 . utils/helpers.sh
 
+
 #### Compatibility with CTP7 (NEEDS TO BE WRITTEN)
 ## @defgroup uTCA uTCA Utilities
+## @brief Functions to facilitate configuration of uTCA infrastructure.
+## @details
 
 ## @fn install_sysmgr()
 ## @brief Configure machine for usage of UW sysmgr
 ## @ingroup uTCA
-## @details Installs the sysmgr service and enables it, if the machine should be the controller of the CTP7s
+## @details Installs the @c sysmgr service and enables it, if the machine should be the controller of the CTP7s
 ## @note @ref setup_machine option @c '-S'
 install_sysmgr() {
     echo Installing UW sysmgr RPMS...
@@ -40,9 +43,9 @@ install_sysmgr() {
 ## @brief Prepare machine to work with CTP7s
 ## @ingroup uTCA
 ## @details Prompts user to add uTCA shelves to the configuration and outputs appropriate configuration files
-##      Configures /etc/hosts for GEM aliases
-##      Creates a /opt/cmsgemos/etc/maps/connections.xml (moves current file to backup beforehand)
-##      Prompts to configure dnsmasq and xinitd to serve names and time to the CTP7 through the sysmgr
+## @li Configures @c /etc/hosts for GEM aliases
+## @li Creates a @c /opt/cmsgemos/etc/maps/connections.xml (moves current file to backup beforehand)
+## @li Prompts to configure @c dnsmasq and @c xinitd to serve names and time to the CTP7 through the @c sysmgr
 ## @note @ref setup_machine option @c '-C'
 connect_ctp7s() {
     printf "\033[1;36m %s \n\033[0m" "Setting up for ${hostname} for CTP7 usage"
@@ -191,9 +194,9 @@ cardmodule {
 
 EOF
 
-    ## Created /etc/sysmgr/ipconfig.xml to map geographic address assignments for crates 1 and 2 matching the /24
-    ## subnets associated with the MCHs listed for them in /etc/sysmgr/sysmgr.conf.
-    ## These addresses will occupy 192.168.*.40 to 192.168.*.52 which nmap confirms are not in use.
+    ### Created /etc/sysmgr/ipconfig.xml to map geographic address assignments for crates 1 and 2 matching the /24
+    ### subnets associated with the MCHs listed for them in /etc/sysmgr/sysmgr.conf.
+    ### These addresses will occupy 192.168.*.40 to 192.168.*.52 which nmap confirms are not in use.
     if [ -e /etc/sysmgr/ipconfig.xml ]
     then
         mv /etc/sysmgr/ipconfig.xml /etc/sysmgr/ipconfig.xml.bak
@@ -299,17 +302,17 @@ EOF
 </connections>
 EOF
 
-    ## Set up host machine to act as time server
+    ### Set up host machine to act as time server
     if [ -e /etc/xinetd.d/time-stream ]
     then
         line=$(sed -n '/disable/=' /etc/xinetd.d/time-stream)
         cp /etc/xinetd.d/{time-stream,time-stream.bak}
         sed -i "$line s|yes|no|g" /etc/xinetd.d/time-stream
-        ## restart xinetd
+        ### restart xinetd
         # new_service xinetd on
     fi
 
-    ## Set up rsyslog
+    ### Set up rsyslog
     cat <<EOF > /etc/logrotate.d/ctp7
 $ModLoad imudp
 
@@ -320,7 +323,7 @@ $template RemoteLog,"/var/log/remote/%HOSTNAME%/messages.log"
 :fromhost-ip, startswith, "192.168." ?RemoteLog
 EOF
 
-    ## Configure logrotate to rotate ctp7 logs
+    ### Configure logrotate to rotate ctp7 logs
     cat <<\EOF > /etc/logrotate.d/ctp7
 /var/log/remote/*/messages.log {
         sharedscripts
@@ -337,10 +340,10 @@ EOF
 }
 
 EOF
-    ## Restart rsyslog
+    ### Restart rsyslog
     # new_service rsyslog on
 
-    ## Set up dnsmasq
+    ### Set up dnsmasq
     if [ -e /etc/xinetd.d/time-stream ]
     then
         cp /etc/{dnsmasq.conf,dnsmasq.conf.bak}
@@ -433,10 +436,10 @@ dhcp-host=00:1e:c0:85:72:c9,192.168.250.71 # eagle63
 dhcp-host=00:1e:c0:86:2a:7e,192.168.250.72 # eagle64
 dhcp-host=00:1e:c0:85:ca:01,192.168.250.73 # eagle65
 EOF
-    ## Restart dnsmasq
+    ### Restart dnsmasq
     # new_service dnsmasq on
 
-    ## Update /etc/hosts with CTP7-related dns (bird) names
+    ### Update /etc/hosts with CTP7-related dns (bird) names
     cat <<EOF >> /etc/hosts
 
 # falcons

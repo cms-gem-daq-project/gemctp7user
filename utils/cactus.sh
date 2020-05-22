@@ -1,21 +1,22 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Set of scripts to simplify the configuration of cactus tools on GEM DAQ machines
-##
+
+. utils/helpers.sh
+
+
+## @defgroup Cactus Cactus Utilities
+## @brief Utilities to mange installation of @c cactus related packages (@c ipbus and @c amc13)
 ## @details
 ## @note Supported OS releases are (@c centos7|@c centos8)
 ## @note Currently only AMC13 SW release 1.2 is supported, with no build for @c centos8 nor for compatibility with @c ipbus 2.7
 ## @note Supported ipbus-sw versions are:
 ## @li 2.6/2.7 for @c centos7
 ## @li 2.7 for @c centos8
-
-. utils/helpers.sh
-
-## @defgroup Cactus Cactus Utilities
 
 ## @fn get_amc13_repo()
 ## @brief Create the AMC13 @c yum/dnf repo file for the architecture and release

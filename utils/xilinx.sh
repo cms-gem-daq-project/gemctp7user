@@ -1,19 +1,22 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Functions to wrap installation of Xilinx tooling
 
 . utils/helpers.sh
 
+
+## @defgroup Xilinx Xilinx Utilities
+## @brief Functions to facilitate installation and setup of Xilinx tooling.
+## @details
+
 if [ -n ${XILINX_DIR} ]
 then
     XILINX_DIR=/opt/Xilinx
 fi
-
-## @defgroup Xilinx Xilinx Utilities
 
 ## @fn install_usb_cable_driver()
 ## @brief Install Xilinx programmer box USB drivers

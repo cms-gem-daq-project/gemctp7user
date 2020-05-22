@@ -3,16 +3,25 @@
 set -o pipefail
 
 ## @file setup_ctp7.sh
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @ingroup SetupCTP7
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
-## @brief Script to facilitate the setup of new CTP7s, or update SW/FW on a CTP7
-## @details
-## @par Usage
-## See setup_ctp7.sh -h
+## @brief Script to facilitate the setup of new CTP7s, or update SW/FW on a CTP7.
+
+
+## @defgroup SetupCTP7 CTP7 Setup
+## @brief Use this module to help manage your CTP7.
+## @details This module provides various functions related to
+##          setting up or updating a CTP7.
+##
+## @par Usage @c setup_ctp7.sh @c -h
+##
+##      The main entry point is provided in the function @ref setup_ctp7.
 
 ## @fn cleanup_ctp7()
 ## @brief Remove all temporary artifacts created during execution
+## @ingroup SetupCTP7
 ## @details Called in @c trap on
 ##
 ## @li @c EXIT
@@ -34,7 +43,10 @@ cleanup_ctp7() {
 
 trap cleanup_ctp7 EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
 
-usage() {
+## @fn usage_ctp7()
+## @brief Usage function for @ref setup_ctp7
+## @ingroup SetupCTP7
+usage_ctp7() {
     cat <<EOF
 Usage: $0 [options] <CTP7 hostname>
   Options:
@@ -66,41 +78,49 @@ EOF
 ### Globals
 ## @var CARD_GEMDAQ_DIR
 ## @brief location of @c gemdaq directory on CTP7
+## @ingroup SetupCTP7
 declare -r CARD_GEMDAQ_DIR=/mnt/persistent/gemdaq
 
 ## @var GEM_FW_DIR
 ## @brief location of FW files on PC
+## @ingroup SetupCTP7
 ## @details If not set in the calling shell, use the default
 ##   Path to local storage of bitfiles and xml files for each FW version
 ##   Useful?
-export GEM_FW_DIR=${GEM_FW_DIR:=/opt/gemdaq/fw}
+declare -rx GEM_FW_DIR=${GEM_FW_DIR:=/opt/gemdaq/fw}
 
 ## @var GEM_ADDRESS_TABLE_PATH
 ## @brief location of XML address table files on PC
+## @ingroup SetupCTP7
 ## @details If not set in the calling shell, use the default
-export GEM_ADDRESS_TABLE_PATH=${GEM_ADDRESS_TABLE_PATH:=/opt/cmsgemos/etc/maps}
+declare -rx GEM_ADDRESS_TABLE_PATH=${GEM_ADDRESS_TABLE_PATH:=/opt/cmsgemos/etc/maps}
 
 ## @var XHAL_ROOT
 ## @brief location of XHAL package on PC
+## @ingroup SetupCTP7
 ## @details If not set in the calling shell, use the default
-export XHAL_ROOT=${XHAL_ROOT:=/opt/xhal}
+declare -rx XHAL_ROOT=${XHAL_ROOT:=/opt/xhal}
 
 ## @var tmpdir
 ## @brief location of temporary files
+## @ingroup SetupCTP7
 ## @details variable is set in @ref create_tmp_card
 declare tmpdir=
 
 ## @var tmpcard
 ## @brief location of @ref CARD_GEMDAQ_DIR inside the local @ref tmpdir
+## @ingroup SetupCTP7
 ## @details variable is set in @ref create_tmp_card
 declare tmpcard=
 
 ## @var gesuf
 ## @brief GEM station specific suffix for downloaded artifacts
+## @ingroup SetupCTP7
 declare gesuf=
 
 ## @fn create_tmp_card()
 ## @brief Creates a temporary directory to emulate CTP7 filesystem
+## @ingroup SetupCTP7
 ## @details All artifacts to be pushed to a CTP7 are copied into this directory,
 ##   which has the same structure as the CTP7 filesystem
 ##   Upon completion or error, this temporary directory is removed in @ref cleanup_ctp7
@@ -125,6 +145,7 @@ create_tmp_card() {
 
 ## @fn update_lmdb()
 ## @brief Updates the LMDB on the CTP7 following update of FW
+## @ingroup SetupCTP7
 ## @details Called if either @ref update_oh_fw or @ref update_ctp7_fw have been called
 update_lmdb() {
 
@@ -152,6 +173,7 @@ update_lmdb() {
 
 ## @fn get_gem_generation()
 ## @brief Determines the appropriate suffix for downloading, depending on the GEM station
+## @ingroup SetupCTP7
 ## @details Valid options are:
 ## @li @c 1 for GE1/1 (default)
 ## @li @c 2 (alias for @c 22
@@ -159,7 +181,7 @@ update_lmdb() {
 ## @li @c 22 for GE2/1 V2 OptoHybrid
 ## @li @c 0 for ME0
 get_gem_generation() {
-    export ge_gen=${ge_gen:="$1"}
+    declare -rx ge_gen=${ge_gen:="$1"}
     ${DEBUG} echo ${ge_gen}
 
     local -r genre='^([01]|(2[12]?))$'
@@ -198,6 +220,7 @@ get_gem_generation() {
 
 ## @fn check_gemuser()
 ## @brief Checks if the @c gemuser account is present on the CTP7
+## @ingroup SetupCTP7
 ## @details
 check_gemuser() {
     ${DRYRUN} ssh -tq root@${ctp7host} cat /etc/passwd|egrep gemuser >/dev/null
@@ -205,6 +228,7 @@ check_gemuser() {
 
 ## @fn create_gemuser()
 ## @brief Creates the @c gemuser account on the CTP7 and performs minimal user account setup
+## @ingroup SetupCTP7
 ## @details
 create_gemuser() {
     if ! check_gemuser
@@ -235,6 +259,7 @@ create_gemuser() {
 
 ## @fn update_oh_fw()
 ## @brief Obtains the specified OptoHybrid firmware version and performs the update
+## @ingroup SetupCTP7
 ## @details This function determines the artifact name and location
 ##
 ## @li unpacks the address table file and bitfile
@@ -290,6 +315,7 @@ update_oh_fw() {
 
 ## @fn update_ctp7_fw()
 ## @brief Obtains the specified CTP7 firmware version and performs the update
+## @ingroup SetupCTP7
 ## @details This function determines the artifact name and location
 ##
 ## @li unpacks the address table file and bitfile
@@ -376,6 +402,7 @@ update_ctp7_fw() {
 
 ## @fn update_ctp7_sw()
 ## @brief Obtains the latest (or specified) versions of all SW artfacts for the CTP7
+## @ingroup SetupCTP7
 ## @details This function
 ##
 ## @li determines the artifact names and locations
@@ -490,6 +517,7 @@ chmod -R 777 ${CARD_GEMDAQ_DIR}/address_table.mdb"
 
 ## @fn setup_ctp7()
 ## @brief Main entrypoint
+## @ingroup SetupCTP7
 ## @details The available flags are:
 ##
 ## @li @c -o Update OptoHybrid FW to specified version (version 3.X.Y supported)
@@ -561,47 +589,58 @@ setup_ctp7() {
 #### Option defaults
 ## @var ctp7fw
 ## @brief Update the CTP7 firmware to the specified version, script option @c -c
+## @ingroup SetupCTP7
 declare ctp7fw=
 
 ## @var ge_gen
 ## @brief GEM station/generation specifier, script option @c -g
+## @ingroup SetupCTP7
 declare ge_gen=
 
 ## @var nlinks
 ## @brief Number of OptoHybrid links to support, script option @c -n (default is 12)
+## @ingroup SetupCTP7
 declare nlinks=
 
 ## @var ohfw
 ## @brief Update the OptoHybrid firmware to the specified version, script option @c -o
+## @ingroup SetupCTP7
 declare ohfw=
 
 ## @var gemuser
 ## @brief create the @c gemuser account on the CTP7,script option @c -a
+## @ingroup SetupCTP7
 declare gemuser=
 
 ## @var update
 ## @brief Perform an update of the SW libraries on the CTP7, script option @c -u
+## @ingroup SetupCTP7
 declare update=
 
 ## @var xhaltag
 ## @brief Version number of @c xhal package, script option @c -x (default is latest)
+## @ingroup SetupCTP7
 declare xhaltag=
 
 ## @var ctp7modtag
 ## @brief Version number of CTP7 modules, script option @c -m (default is latest)
+## @ingroup SetupCTP7
 declare ctp7modtag=
 
 ## @var KEEP_ARTIFACTS
 ## @brief Keep downloaded artifacts and card temp directory after execution, script option @c -k
+## @ingroup SetupCTP7
 declare KEEP_ARTIFACTS=
 
 ## @var DRYRUN
 ## @brief Perform a dry run, i.e., don't execute any operations, script option @c -n
+## @ingroup SetupCTP7
 ## @details If set, script will @c echo the corresponding commands
 declare DRYRUN=
 
 ## @var DEBUG
 ## @brief Flag to increase debugging output, script option @c -d
+## @ingroup SetupCTP7
 declare DEBUG=:
 
 # Parse the options
@@ -643,6 +682,7 @@ shift $((OPTIND-1))
 
 ## @var ctp7host
 ## @brief hostname of the CTP7 to operate on, @c $1 after processing options
+## @ingroup SetupCTP7
 declare -r ctp7host="$1"
 
 # Call the actual setup script

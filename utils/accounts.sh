@@ -1,15 +1,21 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Tools to create standard GEM DAQ accounts and add NICE users
 
 . utils/helpers.sh
 
+
+## @defgroup Accounts Accounts and Users Utilities
+## @brief Utilities to mange setup and creation of users and groups
+## @details
+
 ## @var GEM_USERS
 ## @brief List of common GEM DAQ users
+## @ingroup Accounts
 ## @li @c gemuser, historically a general purpose user account for operating the teststand [deprecated?]
 ## @li @c gempro, at P5 this role is the same as the @c gemuser role used in 904
 ## @li @c gemdev, at P5 this role allows installation of development versions of software and provides [deprecated?]
@@ -18,13 +24,12 @@ declare -ra GEM_USERS=( gemuser gempro gemdev daqpro )
 
 ## @var GEM_GROUPS
 ## @brief List of common GEM DAQ groups
+## @ingroup Accounts
 ## @li @c gempro, primary group of the @c gempro user
 ## @li @c gemdev, primary group of the @c gemdev user
 ## @li @c gemdaq for scoping DAQ expert tasks
 ## @li @c gemsudoers for scoping admin tasks
 declare -ra GEM_GROUPS=( gempro gemdev daqpro gemdaq gemsudoers )
-
-## @defgroup Accounts Accounts and Users Utilities
 
 ## @fn new_system_group()
 ## @brief Create a new system group
@@ -153,7 +158,7 @@ create_accounts() {
 ## @details Running this command will perform several actions:
 ## @li add @c username if not already present in @c /etc/passwd
 ## @li add @c username to the @c gemuser group
-## @li create a directory in @c/home/username
+## @li create a directory in @c /home/$USER
 ## @li create a @c /data/xdaq/username directory and symlink @c /opt/xdaq/htdocs contents
 ## @li create a @c /data/bigdisk/username area on the NAS
 ## @param username NICE username

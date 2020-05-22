@@ -3,16 +3,26 @@
 shopt -s globstar
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
+## @ingroup LegacyReleasing
 ## @copyright MIT
 ## @version 1.0
-## @brief Script to facilitate creation and deployment of legacy GEM software releases
+## @brief Script to facilitate creation and deployment of legacy GEM software releases.
+
 
 ## @defgroup LegacyReleasing Legacy SW Release
-
+## @brief Use this module to create a legacy software release.
+## @details This module contains related to creating a GEM DAQ
+##          various functions to facilitate creating a software
+##          release for legacy tooling.
+##
+## @par Usage @c make_legacy_release.sh @c -h
+##
+##      The main entry point is provided in the function @ref make_legacy_release.
 
 ## @var GEM_DAQ_PKGS
 ## @brief Short names for repositories
+## @ingroup LegacyReleasing
 declare -r -A GEM_DAQ_PKGS=(
     [cmsgemos]=cmsgemos
     [ctp7_modules]=ctp7_modules
@@ -25,6 +35,7 @@ declare -r -A GEM_DAQ_PKGS=(
 
 ## @var GEM_DAQ_BRANCHES
 ## @brief Legacy branches for repositories
+## @ingroup LegacyReleasing
 declare -r -A GEM_DAQ_BRANCHES=(
     [cmsgemos]=release/legacy-1.0
     [ctp7_modules]=release/legacy-1.1
@@ -37,15 +48,24 @@ declare -r -A GEM_DAQ_BRANCHES=(
 
 ## @var gpgdir
 ## @brief temporary location of GPGHOME, cleaned up on exit
+## @ingroup LegacyReleasing
 declare gpgdir=
 
 ## @var tmpdir
 ## @brief temporary location of cloned repository, cleaned up on exit
+## @ingroup LegacyReleasing
 declare tmpdir=
 
-## @fn cleanup
+## @fn cleanup_mlr()
 ## @brief Ensure all temp dirs are removed on exit or error
-cleanup() {
+## @ingroup LegacyReleasing
+## @details Called in @c trap on
+## @li @c EXIT
+## @li @c SIGQUIT
+## @li @c SIGINT
+## @li @c SIGTERM
+## @li @c SIGSEGV
+cleanup_mlr() {
     if ! [ "$?" = "0" ]
     then
         printf "\033[1;31m %s \n\033[0m" "An error occurred, check the output or log"
@@ -73,11 +93,12 @@ cleanup() {
     printf "\033[1;32m %s \n\033[0m" "Cleanup finished, bye!"
 }
 
-trap cleanup EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
+trap cleanup_mlr EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
 
-## @fn usage
-## @brief Usage function
-usage() {
+## @fn usage_mlr()
+## @brief Usage function for @ref make_legacy_release.sh
+## @ingroup LegacyReleasing
+usage_mlr() {
     cat <<EOF
 Usage: $0 [options] <SW repository name>
 
@@ -109,15 +130,17 @@ EOF
     exit 1
 }
 
-## @fn make_repo
+## @fn make_repo()
 ## @brief Create a local tree of the EOS repository structure
+## @ingroup LegacyReleasing
 make_repo() {
     mkdir -p ${REPO_DIR}/{tarballs,SRPMS,{peta_armv7l,centos7_x86_64}/{DEBUGRPMS,RPMS}}
 }
 
 
-## @fn prepare_RPMs
+## @fn prepare_rpms()
 ## @brief Copy generated RPMs to release tree
+## @ingroup LegacyReleasing
 prepare_rpms() {
     find . -iname '*.src.rpm'    -print0 -exec mv -t ${REPO_DIR}/SRPMS {} \+
     find . -iname '*.arm.rpm'    -print0 -exec mv -t ${REPO_DIR}/peta_armv7l/RPMS {} \+
@@ -127,8 +150,9 @@ prepare_rpms() {
     find . -iname '*.noarch.rpm' -print0 -exec mv -t ${REPO_DIR}/centos7_x86_64/RPMS {} \+
 }
 
-## @fn prepare_tarballs
+## @fn prepare_tarballs()
 ## @brief Copy generated tarballs to release tree
+## @ingroup LegacyReleasing
 prepare_tarballs() {
     local -r pkg_name=$1
     mkdir -p ${REPO_DIR}/tarballs/${pkg_name}
@@ -137,8 +161,9 @@ prepare_tarballs() {
          -print0 -exec cp -rfp -t ${REPO_DIR}/tarballs/${pkg_name} {} \+
 }
 
-## @fn sign_rpms
+## @fn sign_rpms()
 ## @brief Sign generated RPMs with GPG key
+## @ingroup LegacyReleasing
 sign_rpms() {
     find ${REPO_DIR}/ -iname '*.rpm' -print0 -exec \
          sh -ec '(echo set timeout -1; \
@@ -148,20 +173,23 @@ echo send -- \"${GPG_PASSPHRASE}\\r\"; \
 echo expect eof; ) | expect' \;
 }
 
-## @fn sign_tarballs
+## @fn sign_tarballs()
 ## @brief Sign generated tarballs with GPG key
+## @ingroup LegacyReleasing
 sign_tarballs() {
     find ${REPO_DIR}/tarballs -type f -print0 -exec \
          sh -c "echo ${GPG_PASSPHRASE} | gpg --batch --yes --passphrase-fd 0 --detach-sign --armor {}" \;
 }
-## @fn publish_repo
+## @fn publish_repo()
 ## @brief Push artifacts to EOS repository
+## @ingroup LegacyReleasing
 publish_repo() {
     rsync -ahcX --progress --partial repos/ ${USER}@lxplus.cern.ch:/eos/project/c/cmsgemdaq/www/cmsgemdaq/sw/gemos/repos/releases/legacy/base/
 }
 
-## @fn sigh_repo
+## @fn sign_repo()
 ## @brief Sign repo files with GPG key
+## @ingroup LegacyReleasing
 sign_repo() {
     local repofiles=()
     ssh lxplus.cern.ch << EOF > tmpfiles
@@ -185,8 +213,9 @@ EOF
     shred -n100 -u tmpfiles
 }
 
-## @fn update_tag
+## @fn update_tag()
 ## @brief Bump and push the tag of the repository before building
+## @ingroup LegacyReleasing
 update_tag() {
     git fetch --all -p
 
@@ -220,8 +249,9 @@ update_tag() {
     fi
 }
 
-## @fn make_cmsgemos_xdaq
+## @fn make_cmsgemos_xdaq()
 ## @brief Build the cmsgemos xdaq packages
+## @ingroup LegacyReleasing
 ## @details The xdaq code used for legacy comes from the slice test branch,
 ##          but with a recent hotfix applied for mocking the TTS Resync sequence
 make_cmsgemos_xdaq() {
@@ -244,8 +274,9 @@ make_cmsgemos_xdaq() {
     git co ${GEM_DAQ_BRANCHES[cmsgemos]}
 }
 
-## @fn make_ctp7_tarball
+## @fn make_ctp7_tarball()
 ## @brief Create a CTP7 filesystem tarball
+## @ingroup LegacyReleasing
 ## @details Done for all packages that must be installed on the back-end
 make_ctp7_tarball() {
     mkdir -p mnt/persistent/gemdaq/lib
@@ -269,8 +300,9 @@ make_ctp7_tarball() {
     rm -rf mnt
 }
 
-## @fn make_ctp7mod_tarball
+## @fn make_ctp7mod_tarball()
 ## @brief Create a CTP7 filesystem tarball for the CTP7 modules
+## @ingroup LegacyReleasing
 ## @details Done for ctp7_modules specifically, but could be useful for any
 ##          package that is built separately for GE1/1 and GE2/1
 make_ctp7mod_tarball() {
@@ -281,10 +313,10 @@ make_ctp7mod_tarball() {
     local rpm_name=$(ls rpm/*.rpm|egrep -v devel)
     rpm_name=${rpm_name##*/}
     rpm_name=${rpm_name%%git*}git
-    local -r pkg_name=$(echo ${rpm_name}|awk '{split($$0,a,"-"); print a[1];}')
-    local -r pkg_ver=$(echo ${rpm_name}|awk '{split($$0,a,"-"); print a[2];}')
-    local -r pkg_rpm_rel=$(echo ${rpm_name}|awk '{split($$0,a,"-"); print a[3];}')
-    local -r pkg_gen=$(echo ${pkg_rpm_rel}|awk '{split($$0,a,"."); print a[2];}')
+    local -r pkg_name=$(echo ${rpm_name}    | awk '{split($$0,a,"-"); print a[1];}')
+    local -r pkg_ver=$(echo ${rpm_name}     | awk '{split($$0,a,"-"); print a[2];}')
+    local -r pkg_rpm_rel=$(echo ${rpm_name} | awk '{split($$0,a,"-"); print a[3];}')
+    local -r pkg_gen=$(echo ${pkg_rpm_rel}  | awk '{split($$0,a,"."); print a[2];}')
 
     tar czf ${pkg_name}-${pkg_ver}-${pkg_rpm_rel}.tgz mnt
     ln -s ${pkg_name}-${pkg_ver}-${pkg_rpm_rel}.tgz ${pkg_name}-${pkg_ver}-${pkg_gen}.tgz
@@ -296,8 +328,11 @@ make_ctp7mod_tarball() {
     rm -rf mnt
 }
 
-########################## main script ##########################
-main() {
+####################################### main script #######################################
+## @fn make_legacy_release()
+## @brief Main entry point to the release tool
+## @ingroup LegacyReleasing
+make_legacy_release() {
     if ! [ -n "$1" ]
     then
         printf "\033[1;31m %s \n\033[0m" "Please specify a valid package (or packages)"
@@ -337,7 +372,6 @@ main() {
     export PETA_STAGE=/opt/gem-peta-stage/ctp7
 
     declare -ra PKGS=( "$@" )
-    # declare -r PKG=$1
 
     for PKG in "${PKGS[@]}"
     do
@@ -353,9 +387,7 @@ main() {
 
         pushd ${PKG_NAME}
 
-        ## are we making a new tag, or was the tag previously made?
         update_tag
-
 
         if [[ ${PKG} =~ ctp7_mod ]]
         then
@@ -415,4 +447,4 @@ main() {
 }
 
 #### Run the main function
-(main $@)
+(make_legacy_release $@)

@@ -1,22 +1,24 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
-## @brief Set of utility functions used for setting up GEM DAQ machines
+## @brief Set of utility functions used for setting up GEM DAQ machines.
+
 
 ## @defgroup HelperFunctions Helper Functions
+## @brief Various utility and helper functions used in other scripts.
+## @details
 
 ## @fn prompt_confirm()
-## @brief Display a message and ask for confirmation,
+## @brief Display a message and ask for confirmation.
 ## @ingroup HelperFunctions
 ## @details Message is displayed in the format:
 ##
-##    Message? [y/N/q]:
+##    @c Message? [y/N/q]:
 ##
-##
-## @c Continue is the default message, if none is provided
+##  The default message is @c Continue, if none is provided
 ##
 ## @param msg Message to display
 ## @returns @c 0 for yes
@@ -82,6 +84,7 @@ new_service() {
 
 ## @fn get_gemos_repo()
 ## @brief download the @c gemos @c yum/dnf repo file
+## @ingroup HelperFunctions
 ## @param osver OS version
 ## @returns 0 if successful
 ## @returns 1 if unsuccessful

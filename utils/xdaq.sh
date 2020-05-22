@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## @file
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
 ## @brief Set of scripts to simplify the configuration of xdaq on GEM DAQ machines
@@ -16,36 +16,46 @@
 
 . utils/helpers.sh
 
+
+## @defgroup xDAQ xDAQ Utilities
+## @brief Functions to facilitate installation of xdaq dependencies.
+## @details
+
 ### File globals
 ## @var installpkg
 ## @brief Alias to @c yum/dnf install a package
+## @ingroup xDAQ
 declare -r installpkg="yum install -y"
 
 ## @var installgrp
 ## @brief Alias to @c yum/dnf install a group
+## @ingroup xDAQ
 declare -r installgrp="yum groupinstall -y"
 
 ## @var slc6re
 ## @brief Regular expression matching valid @c xdaq releases for @c slc6
+## @ingroup xDAQ
 declare -r slc6re='^13$'
 
 ## @var cc7re
 ## @brief Regular expression matching valid @c xdaq releases for @c cc7
+## @ingroup xDAQ
 declare -r cc7re='^(14|14-6|15)$'
 
 ## @var cc8re
 ## @brief Regular expression matching valid @c xdaq releases for @c cc8
+## @ingroup xDAQ
 declare -r cc8re='^16$'
 
 ## @var glre
 ## @brief Regular expression matching @c xdaq releases from GitLab
+## @ingroup xDAQ
 declare -r glre='^(14-6|15|16)$'
 
 ## @var xdaqre
 ## @brief Regular expression matching any valid @c xdaq release verison
+## @ingroup xDAQ
 declare -r xdaqre="(${slc6re}|${cc7re}|${cc8re})"
-
-## @defgroup xDAQ xDAQ Utilities
 
 ## @fn get_xdaq_repo()
 ## @brief Create the @c xdaq @c yum/dnf repo file for the architecture and xdaq version

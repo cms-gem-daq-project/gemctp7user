@@ -1,16 +1,25 @@
 #!/bin/bash
 
 ## @file setupMachine.sh
-## @author CMS GEM DAQ Project <gemdaq@cern.ch>
+## @author CMS GEM DAQ Project
 ## @copyright MIT
 ## @version 1.0
-## @brief Script to facilitate the setup of new GEM DAQ machines
-## @details Should be run on a compatible architecture (REHL/Centos based)
-## @par Usage
-## See setupMachine.sh -h
+## @brief Script to facilitate the setup of new GEM DAQ machines.
+
+
+## @defgroup MachineSetup Machine Setup
+## @brief These functions directly relate to the setting up of new DAQ PCs.
+## @details The linked functions perform all the various steps.
+##
+## @note Should be run on a compatible architecture (REHL/Centos based).
+##
+## @par Usage @c setupMachine.sh @c -h
+##
+##      The main entry point is provided in the function @ref setup_machine.
 
 ## @fn cleanup()
 ## @brief Performs cleanup of the actions taken when running the script
+## @ingroup MachineSetup
 ## @details Called in @c trap on
 ## @li @c EXIT
 ## @li @c SIGQUIT
@@ -22,6 +31,7 @@ cleanup() {
 
 trap cleanup EXIT SIGQUIT SIGINT SIGTERM SIGSEGV
 
+# Imports
 . utils/helpers.sh
 . utils/xdaq.sh
 . utils/cactus.sh
@@ -43,6 +53,9 @@ then
     osrel=${ostype}${osver}
 fi
 
+## @fn usage()
+## @brief Usage function for @ref setup_machine
+## @ingroup MachineSetup
 usage() {
     cat <<EOF
 Usage: $0 [options]
@@ -90,6 +103,7 @@ EOF
 
 ## @fn setup_machine()
 ## @brief Runs the machine setup
+## @ingroup MachineSetup
 ## @details The available flags are:
 ##
 ##  These flags aggregate some of the individual options for ease of use
@@ -120,7 +134,6 @@ EOF
 ## @li @c -u @c file Add accounts of NICE users (specified in @c file) with @ref add_users
 ## @li @c -h Print this help menu
 ##
-
 setup_machine() {
     declare -r baseopts="hxcmsrpdnCMNPRUu"
     declare -r groupopts="ADIX"
