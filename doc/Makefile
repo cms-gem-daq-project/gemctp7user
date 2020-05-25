@@ -8,7 +8,7 @@ SPHINXBUILD?=sphinx-build
 SOURCEDIR=source
 BUILDDIR=build
 
-export EOS_SITE_NAME?=test-gemdaq-ci
+export EOS_SITE_NAME?=cmsgemdaq
 export EOS_SITE_PATH?=/tmp/$(USER)/$(EOS_SITE_NAME)
 export EOS_SITE_URL?=https://$(EOS_SITE_NAME).web.cern.ch/$(EOS_SITE_NAME)
 export GEM_DOCS_URL?=$(EOS_SITE_URL)
