@@ -198,12 +198,14 @@ todo_include_todos = True
 # -- Options for HTML output --------------------------------------------------
 
 html_context = {
-    "display_gitlab": True,
-    "gitlab_host": "gitlab.cern.ch",
-    "gitlab_user": "cms-gem-daq-project",
-    "gitlab_repo": "gemctp7user",
-    "gitlab_version": "master",
+    "display_github": True,
+    "github_host": "github.com",
+    "github_user": "cms-gem-daq-project",
+    "github_repo": "gemctp7user",
+    "github_version": "master",
     "conf_py_path": "/doc/source/",
+    "last_updated": "{}".format(os.popen("date -u +'%a %b %d %Y %T %Z'").read().strip()),
+    "commit": "{}".format(os.popen("git describe --abbrev=8 --dirty --always").read().strip()),
 }
 
 html_show_sourcelink = True
@@ -257,7 +259,8 @@ html_css_files = [
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
 html_js_files = [
-    # 'js/custom.js',
+    # # enable for arrow key navigation
+    # "{}/scripts/js/guides-navigation.js".format(os.getenv("GEM_DOCS_URL")),
 ]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
