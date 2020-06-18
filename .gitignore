@@ -1,7 +1,17 @@
 # Ignore everything
 *
+
 # Don't ignore subdirectories
 !*/
-# Don't ignore source files, etc
+
+# Don't ignore git settings
 !*.gitignore
+!*.gitmodules
+
+# Don't ignore source files, etc
+!Makefile
 !*.py
+!*.sh
+
+# Ignore junk files
+*#*
